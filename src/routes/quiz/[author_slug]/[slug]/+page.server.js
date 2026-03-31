@@ -7,9 +7,6 @@ import { fetchCollectionByAuthorAndSlug, fetchCollectionById } from '$lib/api/co
 export const load = async ({ params, url }) => {
     const { author_slug, slug } = params;
 
-    console.log('Server: Loading quiz page with params:', { author_slug, slug });
-    console.log('Server: Full URL:', url.href);
-
     if (!author_slug || !slug) {
         console.error('Server: Missing required params', { author_slug, slug });
 
@@ -31,23 +28,7 @@ export const load = async ({ params, url }) => {
     }
 
     try {
-        console.log('Server: Environment check:', {
-            VITE_API_URL: import.meta.env.VITE_API_URL,
-            NODE_ENV: process.env.NODE_ENV,
-            VERCEL: process.env.VERCEL
-        });
-
-        console.log('Server: Fetching user with slug:', author_slug);
-
-        const testUrl = `${import.meta.env.VITE_API_URL}/users/username/${author_slug}`;
-        console.log('Server: Constructed URL:', testUrl);
-
         const author = await fetchUserBySlug(author_slug);
-
-        console.log(
-            'Server: Author fetch result:',
-            author ? { username: author.username, public_id: author.public_id } : 'NOT FOUND'
-        );
 
         if (!author) {
             return {
@@ -67,16 +48,7 @@ export const load = async ({ params, url }) => {
             };
         }
 
-        console.log(
-            'Server: Fetching collection with author public_id:',
-            author.public_id,
-            'and slug:',
-            slug
-        );
-
         const collectionId = await fetchCollectionByAuthorAndSlug(author.public_id, slug);
-
-        console.log('Server: Collection ID fetch result:', collectionId);
 
         if (!collectionId) {
             return {
@@ -97,13 +69,6 @@ export const load = async ({ params, url }) => {
         }
 
         const collection = await fetchCollectionById(collectionId);
-
-        console.log('Server: Collection fetch result:', collection ? 'found' : 'not found');
-        console.log(
-            'Server: Collection data keys:',
-            collection ? Object.keys(collection) : 'null'
-        );
-
         const score = getScoreByQuizId(author?.quizzes_completed ?? [], collectionId);
 
         const result = {
@@ -120,13 +85,6 @@ export const load = async ({ params, url }) => {
                 url: url.href
             }
         };
-
-        console.log('Server: Final result data:', {
-            collectionId: result.collectionId,
-            category: result.category,
-            author: result.author,
-            thumbnail: result.thumbnail
-        });
 
         return result;
     } catch (error) {
