@@ -53,8 +53,6 @@
 					table: 'collections'
 				},
 				(payload) => {
-					console.log('Realtime change:', payload);
-
 					// If we're viewing a specific collection
 					if (collection?.id) {
 						// If THIS collection changed → refresh it
