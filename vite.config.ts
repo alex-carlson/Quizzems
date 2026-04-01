@@ -1,9 +1,13 @@
 import { sveltekit } from '@sveltejs/kit/vite';
+import { enhancedImages } from '@sveltejs/enhanced-img';
 import path from 'path';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-	plugins: [sveltekit()],
+	plugins: [
+		enhancedImages(),
+		sveltekit()
+	],
 	css: {
 		preprocessorOptions: {
 			scss: {
