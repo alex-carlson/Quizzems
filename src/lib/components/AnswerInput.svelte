@@ -261,6 +261,11 @@
 		align-items: stretch;
 	}
 
+	.form-control {
+		border: solid 2px green;
+		background: white;
+	}
+
 	.input-group .form-control {
 		flex: 1 1 auto;
 		width: auto;

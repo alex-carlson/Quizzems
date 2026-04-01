@@ -12,6 +12,7 @@
 		saveEdit,
 		reorderItems
 	} from '$lib/Upload/uploader';
+	import { supabase } from '$lib/api/supabaseClient';
 	import { apiFetch } from '$lib/api/fetchdata';
 	import { addToast } from '../../stores/toast';
 	import QuestionTypeForm from '$lib/components/QuestionTypeForm.svelte';
@@ -30,6 +31,7 @@
 	let tempTags = '';
 	let isShuffle = false;
 	let suggestedTags = [];
+	let channel;
 
 	let tagDebounceTimeout;
 	const dispatch = createEventDispatcher();
@@ -40,6 +42,36 @@
 		if ($user?.public_id) {
 			loadCollections();
 		}
+
+		channel = supabase
+			.channel('collections-realtime')
+			.on(
+				'postgres_changes',
+				{
+					event: '*',
+					schema: 'public',
+					table: 'collections'
+				},
+				(payload) => {
+					console.log('Realtime change:', payload);
+
+					// If we're viewing a specific collection
+					if (collection?.id) {
+						// If THIS collection changed → refresh it
+						if (payload.new?.id === collection.id || payload.old?.id === collection.id) {
+							setCollection(collection.id);
+						}
+					}
+
+					// Always refresh collections list (sidebar)
+					loadCollections();
+				}
+			)
+			.subscribe();
+
+		return () => {
+			if (channel) supabase.removeChannel(channel);
+		};
 	});
 
 	let lastUserId;

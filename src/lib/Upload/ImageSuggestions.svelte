@@ -1,6 +1,6 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
-	import { addToast } from '../stores/toast';
+	import { addToast } from '../../stores/toast';
 	import { Fa } from 'svelte-fa';
 	import { faSearch } from '@fortawesome/free-solid-svg-icons';
 	const dispatch = createEventDispatcher();
@@ -161,7 +161,7 @@
 			type="text"
 			bind:value={searchOverride}
 			placeholder="Search for images..."
-			class="search-input"
+			class="search-input search-override"
 		/>
 		<div class="d-flex align-items-end gap-3 w-100">
 			<div class="file-type-selector flex-fill">
@@ -308,6 +308,11 @@
 		background-color: #f8f9fa;
 		border-radius: 4px;
 		overflow: hidden;
+	}
+
+	.search-override {
+		border: solid 2px #131313;
+		border-radius: 8px;
 	}
 
 	/* Desktop: fixed width, mobile: constrained width */

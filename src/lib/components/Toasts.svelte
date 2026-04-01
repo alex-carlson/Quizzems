@@ -78,4 +78,7 @@
 	.toast.error {
 		background: #f44336;
 	}
+	.toast.warning {
+		background: #f44336;
+	}
 </style>

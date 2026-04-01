@@ -2,7 +2,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import FileUpload from '../Upload/FileUpload.svelte';
 	import AudioUploader from '../Upload/AudioUploader.svelte';
-	import ImageSuggestions from '../ImageSuggestions.svelte';
+	import ImageSuggestions from '../Upload/ImageSuggestions.svelte';
 	import AnswerInput from './AnswerInput.svelte';
 	import { addToast } from '../../stores/toast';
 	import { uploadData, uploadQuestion, uploadAudio } from '../Upload/uploader';
@@ -123,10 +123,32 @@
 				questionType: 'image'
 			});
 
-			addToast({
-				type: 'success',
-				message: 'Image added successfully!'
-			});
+			// Check for duplicate answers
+			const currentAnswer = Array.isArray(item.answers)
+				? item.answers.join(' ').trim().toLowerCase()
+				: (item.answer || '').trim().toLowerCase();
+
+			if (currentAnswer && newItems[0].items.length > 1) {
+				const existingAnswers = newItems[0].items
+					.slice(0, -1)
+					.map((i) =>
+						Array.isArray(i.answers)
+							? i.answers.join(' ').trim().toLowerCase()
+							: (i.answer || '').trim().toLowerCase()
+					);
+				if (existingAnswers.includes(currentAnswer)) {
+					addToast({
+						type: 'warning',
+						message: 'This answer already exists in the collection.'
+					});
+				} else {
+					addToast({
+						type: 'success',
+						message: 'Image added successfully!'
+					});
+				}
+			}
+
 			item.question = '';
 			item.answer = '';
 			item.answers = '';
