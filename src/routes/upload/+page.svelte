@@ -33,7 +33,6 @@
 	let suggestedTags = [];
 	let channel;
 	let skipNextCollectionSync = false;
-	let skipNextCollectionSync = false;
 
 	let tagDebounceTimeout;
 	const dispatch = createEventDispatcher();

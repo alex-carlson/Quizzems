@@ -63,6 +63,13 @@
 	let cachedValidationResult = null; // Cache validation results
 	let lastValidationInput = ''; // Track input changes
 
+	function normalizeAnswerText(value) {
+		return String(value || '')
+			.toLowerCase()
+			.trim()
+			.replace(/[\u2018\u2019\u02BC']/g, '');
+	}
+
 	function handleInput(idx, e) {
 		if (isLockedIn) return; // Prevent editing when locked in
 
@@ -96,7 +103,10 @@
 		if (item.answerType === AnswerType.MULTIPLE_CHOICE) {
 			// For multiple choice, check if selected answer matches the correct one
 			const correctAnswer = item.answers[item.correctAnswerIndex || 0];
-			return areStringsClose(userAnswers[0], correctAnswer);
+			return areStringsClose(
+				normalizeAnswerText(userAnswers[0]),
+				normalizeAnswerText(correctAnswer)
+			);
 		} else if (item.answerType === AnswerType.MULTI_ANSWER) {
 			// Optimized multi-answer checking
 			const req = item.numRequired ?? (item.answers ? item.answers.length : 1);
@@ -111,7 +121,7 @@
 			// Optimized: break early when possible
 			for (const userAns of filledUserAnswers) {
 				for (const correctAns of correctAnswers) {
-					if (areStringsClose(userAns, correctAns)) {
+					if (areStringsClose(normalizeAnswerText(userAns), normalizeAnswerText(correctAns))) {
 						matchedCorrectAnswers.add(correctAns);
 						break; // Found match, move to next user answer
 					}
@@ -131,13 +141,13 @@
 			if (Array.isArray(item.answer)) {
 				// Early exit optimization
 				for (const ans of item.answer) {
-					if (areStringsClose(userInput, ans)) {
+					if (areStringsClose(normalizeAnswerText(userInput), normalizeAnswerText(ans))) {
 						return true;
 					}
 				}
 				return false;
 			}
-			return areStringsClose(userInput, item.answer);
+			return areStringsClose(normalizeAnswerText(userInput), normalizeAnswerText(item.answer));
 		}
 	}
 
@@ -169,12 +179,12 @@
 			}
 
 			// Optimized: Use Set for faster lookups and reduce string comparisons
-			const correctAnswersSet = new Set(correctAnswers.map((ans) => ans.toLowerCase().trim()));
+			const correctAnswersSet = new Set(correctAnswers.map((ans) => normalizeAnswerText(ans)));
 			let correctCount = 0;
 			let allCorrect = true;
 
 			for (const userAns of filledAnswers) {
-				const userAnsLower = userAns.toLowerCase().trim();
+				const userAnsLower = normalizeAnswerText(userAns);
 				let foundMatch = false;
 
 				// Fast exact match first
@@ -184,7 +194,7 @@
 				} else {
 					// Slower fuzzy match only if exact match fails
 					for (const correctAns of correctAnswers) {
-						if (areStringsClose(userAns, correctAns)) {
+						if (areStringsClose(normalizeAnswerText(userAns), normalizeAnswerText(correctAns))) {
 							foundMatch = true;
 							correctCount++;
 							break;
@@ -344,7 +354,7 @@
 
 		// Check if user's input matches any of the valid answers
 		for (const ans of item.answer) {
-			if (areStringsClose(userInput, ans)) {
+			if (areStringsClose(normalizeAnswerText(userInput), normalizeAnswerText(ans))) {
 				return ans; // Return the matched answer from the array
 			}
 		}
