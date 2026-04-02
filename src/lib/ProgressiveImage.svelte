@@ -33,10 +33,6 @@
 
 	function handleError(e) {
 		console.error('Error loading image');
-		addToast({
-			type: 'error',
-			message: 'Failed to load image. Please try again later.'
-		});
 	}
 
 	// Check if image is in cache

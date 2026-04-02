@@ -93,7 +93,6 @@
 		} else {
 			// All formats failed
 			console.error('Failed to load image in all formats:', originalSrc);
-			addToast({ type: 'error', message: 'Failed to load image. Please try again later.' });
 			dispatch('error', event);
 		}
 	}
