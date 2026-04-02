@@ -62,12 +62,35 @@
 	let validationTimeout; // For debouncing validation
 	let cachedValidationResult = null; // Cache validation results
 	let lastValidationInput = ''; // Track input changes
+	let normalizedSingleAnswers = [];
+	let normalizedMultiAnswers = [];
+	let normalizedMultiAnswersSet = new Set();
+	let normalizedMultipleChoiceCorrect = '';
 
 	function normalizeAnswerText(value) {
 		return String(value || '')
 			.toLowerCase()
 			.trim()
 			.replace(/[\u2018\u2019\u02BC']/g, '');
+	}
+
+	function getValidationKey() {
+		if (!userAnswers.length) return '';
+		return userAnswers.map((ans) => (ans ? ans.trim() : '')).join('\u0001');
+	}
+
+	$: {
+		if (Array.isArray(item.answer)) {
+			normalizedSingleAnswers = item.answer.map((ans) => normalizeAnswerText(ans));
+		} else {
+			normalizedSingleAnswers = [normalizeAnswerText(item.answer)];
+		}
+
+		normalizedMultiAnswers = (item.answers || [item.answer]).map((ans) => normalizeAnswerText(ans));
+		normalizedMultiAnswersSet = new Set(normalizedMultiAnswers);
+		normalizedMultipleChoiceCorrect = normalizeAnswerText(
+			item.answers?.[item.correctAnswerIndex || 0]
+		);
 	}
 
 	function handleInput(idx, e) {
@@ -102,15 +125,10 @@
 	function isCorrect() {
 		if (item.answerType === AnswerType.MULTIPLE_CHOICE) {
 			// For multiple choice, check if selected answer matches the correct one
-			const correctAnswer = item.answers[item.correctAnswerIndex || 0];
-			return areStringsClose(
-				normalizeAnswerText(userAnswers[0]),
-				normalizeAnswerText(correctAnswer)
-			);
+			return areStringsClose(normalizeAnswerText(userAnswers[0]), normalizedMultipleChoiceCorrect);
 		} else if (item.answerType === AnswerType.MULTI_ANSWER) {
 			// Optimized multi-answer checking
 			const req = item.numRequired ?? (item.answers ? item.answers.length : 1);
-			const correctAnswers = item.answers || [item.answer];
 			const filledUserAnswers = userAnswers.filter((ans) => ans && ans.trim());
 
 			if (filledUserAnswers.length < req) return false;
@@ -120,8 +138,9 @@
 
 			// Optimized: break early when possible
 			for (const userAns of filledUserAnswers) {
-				for (const correctAns of correctAnswers) {
-					if (areStringsClose(normalizeAnswerText(userAns), normalizeAnswerText(correctAns))) {
+				const normalizedUserAns = normalizeAnswerText(userAns);
+				for (const correctAns of normalizedMultiAnswers) {
+					if (areStringsClose(normalizedUserAns, correctAns)) {
 						matchedCorrectAnswers.add(correctAns);
 						break; // Found match, move to next user answer
 					}
@@ -139,21 +158,22 @@
 			if (!userInput.trim()) return false;
 
 			if (Array.isArray(item.answer)) {
+				const normalizedUserInput = normalizeAnswerText(userInput);
 				// Early exit optimization
-				for (const ans of item.answer) {
-					if (areStringsClose(normalizeAnswerText(userInput), normalizeAnswerText(ans))) {
+				for (const ans of normalizedSingleAnswers) {
+					if (areStringsClose(normalizedUserInput, ans)) {
 						return true;
 					}
 				}
 				return false;
 			}
-			return areStringsClose(normalizeAnswerText(userInput), normalizeAnswerText(item.answer));
+			return areStringsClose(normalizeAnswerText(userInput), normalizedSingleAnswers[0]);
 		}
 	}
 
 	function validateAnswer() {
 		// Performance optimization: Check if we already have a cached result
-		const currentInput = JSON.stringify(userAnswers);
+		const currentInput = getValidationKey();
 		if (lastValidationInput === currentInput && cachedValidationResult !== null) {
 			isValidated = cachedValidationResult;
 			return;
@@ -168,8 +188,7 @@
 			isValidated = result;
 		} else if (item.answerType === AnswerType.MULTI_ANSWER) {
 			// Performance optimization: Cache expensive operations
-			const correctAnswers = item.answers || [item.answer];
-			const req = item.numRequired ?? correctAnswers.length;
+			const req = item.numRequired ?? normalizedMultiAnswers.length;
 			const filledAnswers = userAnswers.filter((a) => a && a.trim());
 
 			if (filledAnswers.length === 0) {
@@ -178,8 +197,6 @@
 				return;
 			}
 
-			// Optimized: Use Set for faster lookups and reduce string comparisons
-			const correctAnswersSet = new Set(correctAnswers.map((ans) => normalizeAnswerText(ans)));
 			let correctCount = 0;
 			let allCorrect = true;
 
@@ -188,13 +205,13 @@
 				let foundMatch = false;
 
 				// Fast exact match first
-				if (correctAnswersSet.has(userAnsLower)) {
+				if (normalizedMultiAnswersSet.has(userAnsLower)) {
 					foundMatch = true;
 					correctCount++;
 				} else {
 					// Slower fuzzy match only if exact match fails
-					for (const correctAns of correctAnswers) {
-						if (areStringsClose(normalizeAnswerText(userAns), normalizeAnswerText(correctAns))) {
+					for (const correctAns of normalizedMultiAnswers) {
+						if (areStringsClose(userAnsLower, correctAns)) {
 							foundMatch = true;
 							correctCount++;
 							break;
@@ -351,11 +368,12 @@
 	function getUserValidAnswer() {
 		const userInput = userAnswers[0] || item.userAnswer || '';
 		if (!userInput.trim() || !Array.isArray(item.answer)) return null;
+		const normalizedUserInput = normalizeAnswerText(userInput);
 
 		// Check if user's input matches any of the valid answers
-		for (const ans of item.answer) {
-			if (areStringsClose(normalizeAnswerText(userInput), normalizeAnswerText(ans))) {
-				return ans; // Return the matched answer from the array
+		for (let idx = 0; idx < normalizedSingleAnswers.length; idx++) {
+			if (areStringsClose(normalizedUserInput, normalizedSingleAnswers[idx])) {
+				return item.answer[idx]; // Return the matched answer from the original array
 			}
 		}
 		return null;

@@ -15,6 +15,22 @@
 	let totalCount = 0;
 	let isLoading = true;
 
+	function getLastModifiedValue(collection) {
+		return collection?.last_modified || 0;
+	}
+
+	function applyFallbackSort(data, sortMode, order) {
+		if (!Array.isArray(data)) return [];
+		if (sortMode !== 'modified') return data;
+
+		const direction = order === 'asc' ? 1 : -1;
+		return [...data].sort((a, b) => {
+			const aDate = new Date(getLastModifiedValue(a)).getTime();
+			const bDate = new Date(getLastModifiedValue(b)).getTime();
+			return (aDate - bDate) * direction;
+		});
+	}
+
 	async function fetchPaginatedCollections(
 		pageNum = 1,
 		limit = 20,
@@ -36,8 +52,9 @@
 			const response = await apiFetch(url, 'POST', requestBody, false, false);
 
 			if (response && response.collections) {
-				collections = response.collections;
-				filteredCollections = response.collections;
+				const sortedCollections = applyFallbackSort(response.collections, sortMode, sortOrder);
+				collections = sortedCollections;
+				filteredCollections = sortedCollections;
 				totalCount = response.totalCount || 0;
 				totalPages = response.totalPages || 0;
 			} else {

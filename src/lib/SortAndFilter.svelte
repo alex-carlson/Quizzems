@@ -67,6 +67,7 @@
 					<select id="sort" bind:value={pendingSortOption}>
 						<option value="name">Alphabetical</option>
 						<option value="date">Creation Date</option>
+						<option value="modified">Last Modified</option>
 						<option value="size">Size</option>
 						<option value="plays">Times Played</option>
 					</select>

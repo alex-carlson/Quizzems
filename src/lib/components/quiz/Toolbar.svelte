@@ -8,7 +8,8 @@
 		faList,
 		faExpand,
 		faCompress,
-		faRotateBack
+		faRotateBack,
+		faPencil
 	} from '@fortawesome/free-solid-svg-icons';
 	import { createEventDispatcher } from 'svelte';
 
@@ -17,6 +18,7 @@
 	export let isGrid = false;
 	export let isFullscreen = false;
 	export let shuffleTrigger = 0;
+	export let showEditButton = false;
 
 	// Computed values
 	$: areAnyCardsRevealed = cards.some((card) => card?.revealed);
@@ -67,6 +69,10 @@
 		} else {
 			goFullscreen();
 		}
+	}
+
+	function editCollection() {
+		dispatch('edit');
 	}
 	function goFullscreen() {
 		// Exit grid mode when going fullscreen
@@ -141,4 +147,9 @@
 	<button on:click={toggleFullscreen} title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
 		<Fa icon={isFullscreen ? faCompress : faExpand} />
 	</button>
+	{#if showEditButton}
+		<button on:click={editCollection} title="Edit this quiz">
+			<Fa icon={faPencil} />
+		</button>
+	{/if}
 </div>

@@ -2,9 +2,12 @@
 	import FlashCards from '$lib/FlashCards.svelte';
 	import { onDestroy, onMount } from 'svelte';
 	import { incrementPlayCounter } from '$lib/api/collections.js';
+	import { fetchCollaborators } from '$lib/api/user';
 	import QuizHeader from '$lib/components/quiz/QuizHeader.svelte';
 	import { createQuizStore } from '$lib/../stores/quiz';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { user } from '$lib/../stores/user';
 	export let data;
 
 	// Debug the incoming data and route params
@@ -40,6 +43,61 @@
 	let preloadStarted = false;
 	let loadedImages = 0;
 	let failedImages = 0;
+	let canEditCollection = false;
+	let permissionCheckKey = '';
+
+	function slugify(value = '') {
+		return String(value)
+			.toLowerCase()
+			.trim()
+			.replace(/\s+/g, '-')
+			.replace(/[^a-z0-9-]/g, '');
+	}
+
+	async function refreshEditPermission() {
+		if (!collectionId || !$user?.id) {
+			canEditCollection = false;
+			return;
+		}
+
+		const currentUserName = ($user.username || '').toLowerCase();
+		const authorFromCollection = ($quiz.collection?.author || '').toLowerCase();
+		const authorSlugParam = $page.params?.author_slug || '';
+		const isAuthor =
+			(currentUserName && authorFromCollection && currentUserName === authorFromCollection) ||
+			(currentUserName && slugify(currentUserName) === authorSlugParam);
+
+		if (isAuthor) {
+			canEditCollection = true;
+			return;
+		}
+
+		try {
+			const collaborators = await fetchCollaborators(collectionId);
+			const list = Array.isArray(collaborators?.data)
+				? collaborators.data
+				: Array.isArray(collaborators)
+					? collaborators
+					: [];
+
+			canEditCollection = list.some((collab) => {
+				const collabUsername = (collab?.username || '').toLowerCase();
+				return (
+					collab?.id === $user.id ||
+					collab?.public_id === $user.public_id ||
+					(collabUsername && collabUsername === currentUserName)
+				);
+			});
+		} catch (error) {
+			console.error('Failed to check collaborator permissions:', error);
+			canEditCollection = false;
+		}
+	}
+
+	function handleEditCollection() {
+		if (!collectionId) return;
+		goto(`/upload?collectionId=${encodeURIComponent(collectionId)}`);
+	}
 
 	// Preload images function
 	function preloadImages(cards) {
@@ -129,6 +187,14 @@
 
 		if ($quiz.loadingError) {
 			console.error('Quiz loading error:', $quiz.loadingError);
+		}
+	}
+
+	$: {
+		const key = `${collectionId || ''}:${$user?.id || ''}:${$quiz?.collection?.author || ''}`;
+		if (key !== permissionCheckKey) {
+			permissionCheckKey = key;
+			refreshEditPermission();
 		}
 	}
 
@@ -403,11 +469,13 @@
 			{practiceMode}
 			{collectionId}
 			{quiz}
+			{canEditCollection}
 			on:finish={handleQuizFinish}
 			on:giveup={handleQuizFinish}
 			on:statsUpdate={(e) => {
 				quizStats = e.detail;
 			}}
+			on:editCollection={handleEditCollection}
 		/>
 	</div>
 </div>

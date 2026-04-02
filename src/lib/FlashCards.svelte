@@ -18,6 +18,7 @@
 	export let practiceMode;
 	export let isPartyMode = false;
 	export let quiz; // Allow external quiz store to be passed in
+	export let canEditCollection = false;
 
 	// Initialize quiz store (use external if provided, otherwise create new)
 	const quizStore = quiz ?? createQuizStore();
@@ -290,7 +291,9 @@
 				isGrid={$quizStore.isGrid}
 				isFullscreen={$quizStore.isFullscreen}
 				shuffleTrigger={$quizStore.shuffleTrigger}
+				showEditButton={canEditCollection}
 				on:update={handleToolbarUpdate}
+				on:edit={() => dispatch('editCollection')}
 			/>
 		{/if}
 

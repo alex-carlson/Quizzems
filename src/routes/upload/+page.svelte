@@ -16,6 +16,7 @@
 	import { apiFetch } from '$lib/api/fetchdata';
 	import { addToast } from '../../stores/toast';
 	import QuestionTypeForm from '$lib/components/QuestionTypeForm.svelte';
+	import { page } from '$app/stores';
 	import { Fa } from 'svelte-fa';
 	import { faSort, faCheck, faDownload, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 	let collection = null;
@@ -33,6 +34,7 @@
 	let suggestedTags = [];
 	let channel;
 	let skipNextCollectionSync = false;
+	let autoOpenedCollectionId = null;
 
 	let tagDebounceTimeout;
 	const dispatch = createEventDispatcher();
@@ -83,6 +85,18 @@
 	$: if ($user?.public_id && $user.public_id !== lastUserId) {
 		lastUserId = $user.public_id;
 		loadCollections();
+	}
+
+	$: {
+		const requestedCollectionId = $page.url.searchParams.get('collectionId');
+		if (
+			requestedCollectionId &&
+			$user?.public_id &&
+			autoOpenedCollectionId !== requestedCollectionId
+		) {
+			autoOpenedCollectionId = requestedCollectionId;
+			setCollection(requestedCollectionId);
+		}
 	}
 
 	async function loadCollections() {

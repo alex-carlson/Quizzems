@@ -146,8 +146,6 @@
 		display: block;
 		width: 100%;
 		height: 100%;
-		position: absolute;
-		inset: 0;
 	}
 	.enhanced-image-wrapper img,
 	.enhanced-image-wrapper video {
