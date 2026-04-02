@@ -9,6 +9,7 @@
 	import { fetchCollaborators } from '$lib/api/user';
 	import { user } from '$stores/user';
 	import { get } from 'svelte/store';
+	import { goto } from '$app/navigation';
 
 	$: userId = get(user)?.id ?? null;
 
@@ -29,6 +30,15 @@
 	function toggleCropper() {
 		showCropper = !showCropper;
 		dispatch('toggleCropper');
+	}
+
+	function convertToSlug(str) {
+		if (!str) return '';
+		return str
+			.toLowerCase()
+			.trim()
+			.replace(/\s+/g, '-')
+			.replace(/[^\w\-]/g, '');
 	}
 
 	async function uploadChangedImage(file, fileName = null) {
@@ -372,10 +382,32 @@
 									</div>
 								</div>
 							</div>
-							<div class="mt-4">
+							<div class="mt-4 d-flex gap-2">
 								<button type="button" class="btn btn-primary" on:click={updateCollection}>
 									Save Changes
 								</button>
+								{#if isPublic}
+									<button
+										type="button"
+										class="btn btn-success"
+										on:click={() => {
+											const author_slug = convertToSlug(collection?.author);
+											const slug =
+												collection?.slug ||
+												collection?.category?.toLowerCase().replace(/\s+/g, '-');
+											if (author_slug && slug) {
+												goto(`/quiz/${author_slug}/${slug}`);
+											} else {
+												addToast({
+													type: 'error',
+													message: 'Unable to navigate: missing author or collection slug'
+												});
+											}
+										}}
+									>
+										Play
+									</button>
+								{/if}
 							</div>
 						</div>
 

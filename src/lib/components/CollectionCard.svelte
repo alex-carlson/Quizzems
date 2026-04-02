@@ -76,6 +76,7 @@
 							width={80}
 							height={80}
 							placeholder="blur"
+							objectFit="cover"
 						/>
 					{/if}
 				</div>
@@ -119,6 +120,7 @@
 							width={288}
 							height={288}
 							placeholder="blur"
+							objectFit="cover"
 						/>
 					{/if}
 				</div>
@@ -190,6 +192,7 @@
 						alt="placeholder image"
 						width={288}
 						height={288}
+						objectFit="cover"
 					/>
 				</div>
 			</div>

@@ -15,6 +15,7 @@
 	export let className = '';
 	export let placeholder = 'blur';
 	export let priority = false;
+	export let objectFit = 'contain';
 
 	// original image URL
 	$: originalSrc = src || imageUrl;
@@ -103,7 +104,7 @@
 	}
 </script>
 
-<div class="enhanced-image-wrapper {className}">
+<div class="enhanced-image-wrapper {className}" class:cover-fit={objectFit === 'cover'}>
 	{#if currentSrc}
 		{#if currentFormat === 'mp4' && currentSrc.includes('.mp4')}
 			<!-- Try MP4 as video first -->
@@ -118,7 +119,7 @@
 				playsinline
 				on:loadeddata={handleLoad}
 				on:error={handleError}
-				style="width:100%;height:auto;object-fit:cover;"
+				style="width:100%;height:100%;object-fit:{objectFit};"
 			/>
 		{:else}
 			<!-- WebP or original image formats -->
@@ -130,7 +131,7 @@
 				loading={priority ? 'eager' : loading}
 				on:load={handleLoad}
 				on:error={handleError}
-				style="width:100%;height:auto;"
+				style="width:100%;height:100%;object-fit:{objectFit};"
 			/>
 		{/if}
 	{/if}
@@ -138,14 +139,27 @@
 
 <style>
 	.enhanced-image-wrapper {
-		display: inline-block;
-		max-width: 100%;
+		display: block;
+		width: 100%;
+	}
+	.enhanced-image-wrapper.cover-fit {
+		display: block;
+		width: 100%;
+		height: 100%;
+		position: absolute;
+		inset: 0;
 	}
 	.enhanced-image-wrapper img,
 	.enhanced-image-wrapper video {
 		width: 100%;
 		height: auto;
 		transition: opacity 0.3s ease-out;
+	}
+	.enhanced-image-wrapper.cover-fit img,
+	.enhanced-image-wrapper.cover-fit video {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
 	}
 	.enhanced-image-wrapper img[data-loading],
 	.enhanced-image-wrapper video[data-loading] {

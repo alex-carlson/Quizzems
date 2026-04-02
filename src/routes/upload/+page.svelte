@@ -32,6 +32,8 @@
 	let isShuffle = false;
 	let suggestedTags = [];
 	let channel;
+	let skipNextCollectionSync = false;
+	let skipNextCollectionSync = false;
 
 	let tagDebounceTimeout;
 	const dispatch = createEventDispatcher();
@@ -57,7 +59,12 @@
 					if (collection?.id) {
 						// If THIS collection changed → refresh it
 						if (payload.new?.id === collection.id || payload.old?.id === collection.id) {
-							setCollection(collection.id);
+							// Skip sync if we just updated an item locally
+							if (!skipNextCollectionSync) {
+								setCollection(collection.id);
+							} else {
+								skipNextCollectionSync = false;
+							}
 						}
 					}
 
@@ -339,16 +346,11 @@
 													...e.detail
 												};
 
-												// If the image was updated, append a cache-busting param
-												if (updatedItem.image) {
-													const timestamp = Date.now();
-													const url = new URL(updatedItem.image, window.location.origin);
-													url.searchParams.set('v', timestamp);
-													updatedItem.image = url.toString();
-												}
-
 												collection.items[itemIndex] = updatedItem;
 												collection.items = [...collection.items]; // Trigger reactivity
+
+												// Prevent realtime sync from immediately reloading and overwriting our update
+												skipNextCollectionSync = true;
 											}
 										}}
 										on:reorderItem={async (e) => {
