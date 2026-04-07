@@ -431,6 +431,7 @@
 
 		{#if item.imageUrl}
 			<LazyLoadImage
+				priority={true}
 				imageUrl={item.imageUrl}
 				on:load={() => onCardLoad(i)}
 				on:error={() => {
