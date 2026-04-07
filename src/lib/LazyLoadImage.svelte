@@ -20,20 +20,18 @@
 	// original image URL
 	$: originalSrc = src || imageUrl;
 
-	// Generate format URLs
-	$: mp4Src = originalSrc ? generateMp4Url(originalSrc) : '';
-	$: webpSrc = originalSrc ? generateWebpUrl(originalSrc) : '';
+	// Only try webp if original is not webp
+	$: isWebp = originalSrc && originalSrc.match(/\.webp($|\?)/i);
+	$: webpSrc = !isWebp && originalSrc ? generateWebpUrl(originalSrc) : '';
 
-	// Track loading attempts: 'mp4' -> 'webp' -> 'original'
-	let currentFormat = 'mp4';
-	$: currentSrc = getCurrentSrc(originalSrc, mp4Src, webpSrc, currentFormat);
+	// Track loading attempts: 'webp' -> 'original'
+	let currentFormat = !isWebp && webpSrc ? 'webp' : 'original';
+	$: currentSrc = getCurrentSrc(originalSrc, webpSrc, currentFormat);
 
-	function getCurrentSrc(original, mp4, webp, format) {
+	function getCurrentSrc(original, webp, format) {
 		if (!original) return '';
 
 		switch (format) {
-			case 'mp4':
-				return mp4 || webp || original;
 			case 'webp':
 				return webp || original;
 			case 'original':
@@ -42,27 +40,10 @@
 		}
 	}
 
-	function generateMp4Url(url) {
-		if (!url) return '';
-
-		// If URL has query params, add mp4 format
-		if (url.includes('?')) {
-			return url.includes('format=')
-				? url.replace(/format=[^&]+/, 'format=mp4')
-				: `${url}&format=mp4`;
-		}
-
-		// For direct file URLs, try changing extension to .mp4
-		if (url.match(/\.(jpe?g|png|gif|bmp|tiff?|webp)$/i)) {
-			return url.replace(/\.(jpe?g|png|gif|bmp|tiff?|webp)$/i, '.mp4');
-		}
-
-		// For other URLs, try adding mp4 query param
-		return `${url}?format=mp4`;
-	}
-
 	function generateWebpUrl(url) {
 		if (!url) return '';
+		// Don't convert if already webp
+		if (url.match(/\.webp($|\?)/i)) return url;
 
 		// If URL has query params, add webp format
 		if (url.includes('?')) {
@@ -85,10 +66,8 @@
 	}
 
 	function handleError(event) {
-		// Progress through formats: mp4 -> webp -> original
-		if (currentFormat === 'mp4' && webpSrc) {
-			currentFormat = 'webp';
-		} else if (currentFormat === 'webp') {
+		// Progress through formats: webp -> original
+		if (currentFormat === 'webp') {
 			currentFormat = 'original';
 		} else {
 			// All formats failed
@@ -96,43 +75,20 @@
 			dispatch('error', event);
 		}
 	}
-
-	// Reset format when URL changes
-	$: if (originalSrc) {
-		currentFormat = 'mp4';
-	}
 </script>
 
 <div class="enhanced-image-wrapper {className}" class:cover-fit={objectFit === 'cover'}>
 	{#if currentSrc}
-		{#if currentFormat === 'mp4' && currentSrc.includes('.mp4')}
-			<!-- Try MP4 as video first -->
-			<video
-				src={currentSrc}
-				{width}
-				{height}
-				loading={priority ? 'eager' : loading}
-				autoplay
-				muted
-				loop
-				playsinline
-				on:loadeddata={handleLoad}
-				on:error={handleError}
-				style="width:100%;height:100%;object-fit:{objectFit};"
-			/>
-		{:else}
-			<!-- WebP or original image formats -->
-			<img
-				src={currentSrc}
-				{alt}
-				{width}
-				{height}
-				loading={priority ? 'eager' : loading}
-				on:load={handleLoad}
-				on:error={handleError}
-				style="width:100%;height:100%;object-fit:{objectFit};"
-			/>
-		{/if}
+		<img
+			src={currentSrc}
+			{alt}
+			{width}
+			{height}
+			loading={priority ? 'eager' : loading}
+			on:load={handleLoad}
+			on:error={handleError}
+			style="width:100%;height:100%;object-fit:{objectFit};"
+		/>
 	{/if}
 </div>
 
@@ -146,24 +102,14 @@
 		width: 100%;
 		height: 100%;
 	}
-	.enhanced-image-wrapper img,
-	.enhanced-image-wrapper video {
+	.enhanced-image-wrapper img {
 		width: 100%;
 		height: auto;
 		transition: opacity 0.3s ease-out;
 	}
-	.enhanced-image-wrapper.cover-fit img,
-	.enhanced-image-wrapper.cover-fit video {
+	.enhanced-image-wrapper.cover-fit img {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-	}
-	.enhanced-image-wrapper img[data-loading],
-	.enhanced-image-wrapper video[data-loading] {
-		opacity: 0.7;
-	}
-	.enhanced-image-wrapper img[data-loaded],
-	.enhanced-image-wrapper video[data-loaded] {
-		opacity: 1;
 	}
 </style>
