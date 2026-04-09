@@ -10,6 +10,8 @@
 	import { faFlag } from '@fortawesome/free-solid-svg-icons';
 	import Hint from './components/quiz/Hint.svelte';
 
+	export let card = null;
+	export let cards = null;
 	export let item = {
 		answerType: AnswerType.SINGLE,
 		questionType: QuestionType.TEXT,
@@ -20,10 +22,12 @@
 		incorrect: false,
 		hidden: false
 	};
+	// Hydrate item with card data if card is provided
+	$: if (card) {
+		item = { ...item, ...card };
+	}
 	export let i = 0;
-	export let cards = [];
-	export let currentMode = 'FLASH_CARDS';
-	export let shuffleTrigger = 0;
+	export let currentMode = 'FILL_IN_THE_BLANK';
 	export let onCardLoad = () => {};
 	export let toggleReveal = () => {};
 	export let updateCards = () => {};
@@ -385,6 +389,15 @@
 		return `answer ${isCorrect() ? 'correct' : 'incorrect'}`;
 	}
 
+	// Safe stringify for debugging (avoids errors on circular refs)
+	function safeStringify(obj) {
+		try {
+			return JSON.stringify(obj, null, 2);
+		} catch (e) {
+			return '[Unserializable object]';
+		}
+	}
+
 	// Cleanup validation timeout and cache on destroy
 	onDestroy(() => {
 		if (validationTimeout) {
@@ -429,10 +442,10 @@
 			{/if}
 		{/if}
 
-		{#if item.imageUrl}
+		{#if item.type === 'image' && item.url}
 			<LazyLoadImage
 				priority={true}
-				imageUrl={item.imageUrl}
+				imageUrl={item.url}
 				on:load={() => onCardLoad(i)}
 				on:error={() => {
 					item.hidden = true;
@@ -441,31 +454,18 @@
 			/>
 		{/if}
 
-		{#if item.questionType === QuestionType.TEXT && item.type != 'image' && item.type != 'audio' && !item.imageUrl && !item.image}
+		{#if item.type === 'question' && item.type != 'image' && item.type != 'audio' && !item.url && !item.image}
 			<h2 class="p-3">{item.question || 'Loading'}</h2>
 		{/if}
 
 		{#if item.supplemental}
 			<span class="supplemental">{@html (item.supplemental || '').replace(/\n/g, '<br>')}</span>
 		{/if}
-
 		<div class="answerbox mt-2">
 			{#if currentMode === 'TRUE_FALSE'}
-				<Options
-					{cards}
-					currentCardIndex={i}
-					numberOfOptions="2"
-					{shuffleTrigger}
-					on:correctAnswer
-				/>
+				<Options {cards} currentCardIndex={i} numberOfOptions="2" on:correctAnswer />
 			{:else if currentMode === 'MULTIPLE_CHOICE'}
-				<Options
-					{cards}
-					currentCardIndex={i}
-					numberOfOptions="4"
-					{shuffleTrigger}
-					on:correctAnswer
-				/>
+				<Options {cards} currentCardIndex={i} numberOfOptions="4" on:correctAnswer />
 			{:else if currentMode === 'FILL_IN_THE_BLANK'}
 				{#if item.answerer}
 					<ProfilePicture userId={item.answerer} size={32} class="answerer" />
