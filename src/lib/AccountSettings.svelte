@@ -2,13 +2,11 @@
 	import { user, setUserBio } from '$stores/user';
 	import { getSession } from '$lib/api/supabaseClient';
 	import { updateUsername, updateEmail } from '$lib/api/auth';
-	import { toggleCache, CACHE_ENABLED } from '$stores/data';
 	import { get } from 'svelte/store';
 
 	let message = '';
 	let file = null;
 	let userId = null;
-	let cacheEnabled = CACHE_ENABLED;
 
 	// Track original values to detect changes
 	let originalEmail = '';
@@ -188,11 +186,6 @@
 		} else {
 			message = `Some updates failed: ${errors.join(', ')}`;
 		}
-	}
-
-	function handleCacheToggle() {
-		cacheEnabled = toggleCache(cacheEnabled);
-		message = `Cache ${cacheEnabled ? 'enabled' : 'disabled'}`;
 	}
 </script>
 
