@@ -19,7 +19,6 @@
 	let loading = true;
 	let practiceMode = false;
 	let flashCardsComponent;
-	let quizStats = { correct: 0, total: 0 };
 	let collectionInfo = null;
 	let cards = null;
 	let canEditCollection = false;
@@ -301,7 +300,9 @@
 			>
 				<div style="flex:1;"></div>
 				<h2 style="margin:0; text-align:center; flex:1;">
-					{quizStats.correct}/{quizStats.total}
+					{Array.isArray(cards) ? cards.filter((c) => c.isCorrect).length : 0}/{Array.isArray(cards)
+						? cards.length
+						: 0}
 				</h2>
 				{#if !practiceMode}
 					<div class="timer" style="flex:1; text-align:right; white-space:nowrap;">
@@ -326,7 +327,7 @@
 				on:finish={handleQuizFinish}
 				on:giveup={handleQuizFinish}
 				on:statsUpdate={(e) => {
-					quizStats = e.detail;
+					quizStats.set(e.detail);
 				}}
 				on:editCollection={handleEditCollection}
 			/>
