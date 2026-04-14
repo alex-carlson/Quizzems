@@ -12,19 +12,21 @@
 	$: item = card;
 	$: currentMode = $quiz.currentMode;
 
+	// Reset state when card changes (not mode)
 	$: if (item?.id && item.id !== lastId) {
 		lastId = item.id;
-
 		isLockedIn = false;
 		selectedChoice = item.userAnswer ?? null;
 		isCorrectChoice = item.isCorrect ?? null;
-		optionsCache = null;
-
 		draftAnswer = item.userAnswer ?? '';
+		optionsCacheMap.delete(item.id); // Reset options for this card only on card change
 	}
 
 	let isLockedIn = false;
 	let optionsCache = null;
+
+	// Cache options per card id to prevent reordering on mode change
+	let optionsCacheMap = new Map();
 
 	function updateCard(patch) {
 		quiz.updateCardById(item.id, patch);
@@ -58,11 +60,12 @@
 	}
 
 	function getMultipleChoiceOptions(count = 2) {
-		if (optionsCache) return optionsCache;
 		if (!item) return [];
+		if (optionsCacheMap.has(item.id)) {
+			return optionsCacheMap.get(item.id);
+		}
 
 		const correct = getCorrectAnswer();
-
 		const wrongPool = $quiz.cards
 			.filter((c) => c.id !== item.id)
 			.map((c) => (Array.isArray(c.answer) ? c.answer[0] : c.answer))
@@ -72,9 +75,9 @@
 		const shuffledWrong = wrongPool.sort(() => Math.random() - 0.5);
 		const selectedWrong = shuffledWrong.slice(0, count - 1);
 
-		optionsCache = [correct, ...selectedWrong].filter(Boolean).sort(() => Math.random() - 0.5);
-
-		return optionsCache;
+		const options = [correct, ...selectedWrong].filter(Boolean).sort(() => Math.random() - 0.5);
+		optionsCacheMap.set(item.id, options);
+		return options;
 	}
 
 	function handleMultipleChoiceClick(choice) {
@@ -207,10 +210,20 @@
 	}
 
 	.choice-grid {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: 0.25rem;
-		width: 100%;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.choice-grid button {
+		white-space: normal;
+		word-break: break-word;
+		min-height: 3rem;
+		padding: 0.75rem 1rem;
+		font-size: 1rem;
+		align-items: stretch;
+		justify-content: center;
+		display: flex;
 	}
 
 	.choice-option {

@@ -21,9 +21,8 @@
 	$: {
 		const wasJustAnswered = !prevRevealed && item.revealed;
 
-		if (wasJustAnswered) {
+		if (wasJustAnswered && $quiz.currentMode === 'FILL_IN_THE_BLANK') {
 			const nextIndex = $quiz.cards.findIndex((c, idx) => idx > i && !c.revealed);
-
 			if (nextIndex !== -1) {
 				setTimeout(() => {
 					scrollToIndex(nextIndex);

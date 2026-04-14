@@ -1,36 +1,13 @@
 import { writable } from 'svelte/store';
 import { fetchCollectionItems } from '$lib/api/items';
 
-const initialState = {
-    hasInitialized: false,
-    isLoading: false,
-    quizStarted: false,
-    isComplete: false,
-    showModal: false,
-    currentMode: 'FLASH_CARDS',
-    isPractice: false,
-    isGrid: false,
-    isFullscreen: false,
-    isShuffle: true,
-    collection: null,
-    cards: [],
-    canEditCollection: false,
-    stats: {
-        correct: 0,
-        total: 0,
-        answered: 0,
-        percentage: 0,
-        isComplete: false
-    }
-};
-
 const getInitialState = () => ({
     hasInitialized: false,
     isLoading: false,
     quizStarted: false,
     isComplete: false,
     showModal: false,
-    currentMode: 'FLASH_CARDS',
+    currentMode: 'FILL_IN_THE_BLANK',
     isPractice: false,
     isGrid: false,
     isFullscreen: false,
@@ -48,7 +25,7 @@ const getInitialState = () => ({
 });
 
 function createQuizStore() {
-    const { subscribe, update, set } = writable(initialState);
+    const { subscribe, update, set } = writable(getInitialState());
 
     const patch = (p) => update((s) => ({ ...s, ...p }));
 
