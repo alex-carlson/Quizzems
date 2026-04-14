@@ -1,44 +1,43 @@
 <script>
 	import FlashCards from '$lib/FlashCards.svelte';
+	import Modal from '$lib/Modal.svelte';
+	import { slugify } from '$lib/api/utils.js';
 	import { onDestroy, onMount } from 'svelte';
-	import { fetchCollectionById, incrementPlayCounter } from '$lib/api/collections.js';
-	import { fetchCollectionItems } from '$lib/api/items.js';
+	import { incrementPlayCounter } from '$lib/api/collections.js';
 	import { fetchCollaborators } from '$lib/api/user';
 	import QuizHeader from '$lib/components/quiz/QuizHeader.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { user } from '$lib/../stores/user';
+	import { user } from '$store/user.js';
+	import { getScoreMessage } from '$lib/api/quizScore.js';
 	export let data;
+	import { quiz } from '$store/quiz.js';
+	import { fetchCollectionItems } from '$lib/api/items.js';
 
 	// Destructure page data with fallbacks
 	const { category, collectionId, author, thumbnail, quizScore, timesPlayed, meta } = data || {};
 
 	let timer = 0;
 	let interval = null;
-	let quizStarted = false;
 	let loading = true;
-	let practiceMode = false;
-	let flashCardsComponent;
-	let collectionInfo = null;
-	let cards = null;
 	let canEditCollection = false;
+	let score = 0;
+	let cards = [];
 
-	let collectionError;
-	let collectionLoading = true;
-	let cardsError;
-	let cardsLoading = true;
-
-	function slugify(value = '') {
-		return String(value)
-			.toLowerCase()
-			.trim()
-			.replace(/\s+/g, '-')
-			.replace(/[^a-z0-9-]/g, '');
-	}
+	$: state = $quiz;
+	$: cards = $quiz.cards;
 
 	function handleEditCollection() {
 		if (!collectionId) return;
 		goto(`/upload?collectionId=${encodeURIComponent(collectionId)}`);
+	}
+
+	function updateCards(e) {
+		// Check if all cards are revealed
+		const allRevealed = cards.every((card) => card.revealed);
+		if (allRevealed) {
+			handleQuizFinish();
+		}
 	}
 
 	async function refreshEditPermission() {
@@ -48,8 +47,12 @@
 		}
 
 		const currentUserName = ($user.username || '').toLowerCase();
-		const authorFromCollection = (collectionInfo.author || '').toLowerCase();
+
+		// ✅ get author from store instead of local variable
+		const authorFromCollection = ($quiz.collection?.author || '').toLowerCase();
+
 		const authorSlugParam = $page.params?.author_slug || '';
+
 		const isAuthor =
 			(currentUserName && authorFromCollection && currentUserName === authorFromCollection) ||
 			(currentUserName && slugify(currentUserName) === authorSlugParam);
@@ -61,6 +64,7 @@
 
 		try {
 			const collaborators = await fetchCollaborators(collectionId);
+
 			const list = Array.isArray(collaborators?.data)
 				? collaborators.data
 				: Array.isArray(collaborators)
@@ -69,6 +73,7 @@
 
 			canEditCollection = list.some((collab) => {
 				const collabUsername = (collab?.username || '').toLowerCase();
+
 				return (
 					collab?.id === $user.id ||
 					collab?.public_id === $user.public_id ||
@@ -82,8 +87,16 @@
 	}
 
 	function startQuiz(isPractice = false) {
-		practiceMode = isPractice;
-		quizStarted = true;
+		quiz.setQuizStarted(true);
+		quiz.setIsPractice(isPractice);
+
+		if (state.isShuffle) {
+			// Fisher-Yates shuffle algorithm
+			for (let i = cards.length - 1; i > 0; i--) {
+				const j = Math.floor(Math.random() * (i + 1));
+				[cards[i], cards[j]] = [cards[j], cards[i]];
+			}
+		}
 
 		// Reset timer if not practice
 		if (!isPractice) {
@@ -98,20 +111,27 @@
 			incrementPlayCounter(collectionId);
 		}
 		loading = false;
+		refreshEditPermission();
 	}
 
-	// Track quiz completion state
-	let quizCompleted = false;
+	function setScore() {
+		let correctAnswerCount = cards.filter((card) => card.isCorrect).length || 0;
+		let totalCount = cards.length;
+
+		return Math.round((correctAnswerCount / totalCount) * 100);
+	}
 
 	// Handle quiz finish
 	function handleQuizFinish() {
-		quizCompleted = true;
+		score = setScore();
+		quiz.setQuizCompleted(true);
+		quiz.openModal();
 		clearInterval(interval);
 	}
 
 	// Add beforeunload warning when quiz is active
 	function handleBeforeUnload(event) {
-		if (quizStarted && !quizCompleted && !practiceMode) {
+		if (state.quizStarted && !state.quizCompleted && !state.practiceMode) {
 			const message =
 				'You are in the middle of a quiz. Are you sure you want to leave? Your progress will be lost.';
 			event.preventDefault();
@@ -122,7 +142,7 @@
 
 	// Handle back button navigation
 	function handlePopState(event) {
-		if (quizStarted && !quizCompleted && !practiceMode) {
+		if (state.quizStarted && !state.quizCompleted && !state.practiceMode) {
 			const confirmed = confirm(
 				'You are in the middle of a quiz. Are you sure you want to leave? Your progress will be lost.'
 			);
@@ -132,58 +152,25 @@
 				return;
 			} else {
 				// User confirmed, allow navigation
-				quizCompleted = true;
+				state.quizCompleted = true;
 			}
 		}
 	}
 
 	onMount(async () => {
-		// Additional validation for route params
 		const { author_slug, slug } = $page.params;
+
 		if (!author_slug || !slug) {
-			console.error('Missing route parameters:', { author_slug, slug });
-			console.error('This suggests a routing/static generation issue');
+			console.error('Missing route parameters');
 		}
 
-		// Don't attempt to load collection if we have server errors
-		if (data?.status === 404 || data?.status === 500 || data?.status === 400) {
-			console.error('Server returned error status:', data.status);
-			return;
-		}
+		if ([400, 404, 500].includes(data?.status)) return;
 
-		if (!collectionId) {
-			collectionLoading = false;
-			collectionError = 'No collectionId provided.';
-			return;
-		}
-		try {
-			collectionLoading = true;
-			collectionError = null;
-			// Fetch collection info (public)
-			collectionInfo = await fetchCollectionById(collectionId, false);
-			collectionLoading = false;
-		} catch (err) {
-			collectionError = err?.message || 'Failed to load collection info.';
-			collectionLoading = false;
-		}
-		try {
-			cardsLoading = true;
-			cardsError = null;
-			const result = await fetchCollectionItems(collectionId, false);
-			if (result && Array.isArray(result.data)) {
-				cards = result.data;
-			} else if (Array.isArray(result)) {
-				cards = result;
-			} else {
-				cards = [];
-			}
-			cardsLoading = false;
-		} catch (err) {
-			cardsError = err?.message || 'Failed to load cards.';
-			cardsLoading = false;
-		}
+		const cards = await fetchCollectionItems(collectionId, false);
 
-		// Add a history state to catch back button (browser only)
+		quiz.setCards(cards);
+		quiz.setQuizStarted(false);
+
 		if (typeof window !== 'undefined') {
 			history.pushState(null, '', window.location.href);
 			window.addEventListener('beforeunload', handleBeforeUnload);
@@ -242,21 +229,20 @@
 </svelte:head>
 
 <div>
-	{#if !quizStarted}
+	<Modal
+		show={state.showModal}
+		title="Quiz Completed!"
+		message={getScoreMessage(score)}
+		effect={score > 79 ? 'confetti' : 'none'}
+		onClose={() => {
+			state.showModal = false;
+		}}
+	/>
+	{#if !state.quizStarted}
 		<div class="white padding rounded m-3">
-			{#if quizStarted}
-				<!-- <QuizHeader
-					collectionName={$quiz.collection.name || category}
-					author={$quiz.collection.author || author}
-					authorSlug={$quiz.collection.author_slug}
-					thumbnail={$quiz.collection.thumbnail || thumbnail}
-					description={$quiz.collection.description}
-				/> -->
-			{:else}
-				<QuizHeader collectionName={category} {author} authorSlug="" {thumbnail} description="" />
-			{/if}
+			<QuizHeader collectionName={category} {author} authorSlug={slugify(author)} {thumbnail} />
 			{#if timesPlayed > 0}<h3 class="mb-3">Times Played: {timesPlayed}</h3>{/if}
-			{#if !quizStarted && !cards}
+			{#if !state.quizStarted && !cards}
 				{#if data?.status === 400}
 					<h2 class="mb-3">Invalid URL</h2>
 					<div class="alert alert-warning">
@@ -304,7 +290,7 @@
 						? cards.length
 						: 0}
 				</h2>
-				{#if !practiceMode}
+				{#if !state.practiceMode}
 					<div class="timer" style="flex:1; text-align:right; white-space:nowrap;">
 						Time: {Math.floor(timer / 60)}:{String(timer % 60).padStart(2, '0')}
 					</div>
@@ -315,20 +301,13 @@
 		</div>
 	{/if}
 
-	<div id="quiz" style="display: {quizStarted ? 'block' : 'none'}">
+	<div id="quiz" style="display: {state.quizStarted ? 'block' : 'none'}">
 		{#if loading}
 			<div class="alert alert-info">Loading...</div>
 		{:else}
 			<FlashCards
-				bind:this={flashCardsComponent}
-				{practiceMode}
-				{canEditCollection}
-				{cards}
 				on:finish={handleQuizFinish}
 				on:giveup={handleQuizFinish}
-				on:statsUpdate={(e) => {
-					quizStats.set(e.detail);
-				}}
 				on:editCollection={handleEditCollection}
 			/>
 		{/if}

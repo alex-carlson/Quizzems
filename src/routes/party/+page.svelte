@@ -1,11 +1,11 @@
 <script>
 	import { onDestroy, onMount } from 'svelte';
 	import { supabase } from '$lib/api/supabaseClient';
-	import { socket, initSocket } from '$stores/socket.js';
-	import { user } from '$stores/user.js';
+	import { socket, initSocket } from '$store/socket.js';
+	import { user } from '$store/user.js';
 	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
-	import { addToast } from '../../stores/toast';
+	import { addToast } from '../../store/toast';
 
 	let userId = null;
 

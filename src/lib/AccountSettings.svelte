@@ -1,5 +1,5 @@
 <script>
-	import { user, setUserBio } from '$stores/user';
+	import { user, setUserBio } from '$store/user';
 	import { getSession } from '$lib/api/supabaseClient';
 	import { updateUsername, updateEmail } from '$lib/api/auth';
 	import { get } from 'svelte/store';

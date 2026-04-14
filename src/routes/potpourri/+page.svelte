@@ -2,24 +2,31 @@
 	import { onMount } from 'svelte';
 	import { fetchRandomItems } from '$lib/api/items';
 	import FlashCards from '$lib/FlashCards.svelte';
+	import { quiz } from '$store/quiz';
 
 	let count = 5;
-	let items = [];
 	let loading = false;
 	let error = '';
 
 	async function getRandomItems() {
 		error = '';
 		loading = true;
-		items = [];
+
 		try {
 			const result = await fetchRandomItems(count);
-			console.log('fetchRandomItems response:', result);
-			items = result || [];
+
+			const cards = Array.isArray(result) ? result : result?.data || [];
+
+			quiz.setCards(cards);
+
+			// optional: if you want to reset quiz state per fetch
+			quiz.setQuizStarted(false);
+			quiz.setQuizCompleted(false);
 		} catch (e) {
-			error = e.message || 'Failed to fetch items';
-			items = [];
+			error = e?.message || 'Failed to fetch items';
+			quiz.setCards([]);
 		}
+
 		loading = false;
 	}
 
@@ -27,16 +34,14 @@
 		document.title = 'Potpourri';
 		getRandomItems();
 	});
-
-	onMount(() => {
-		document.title = 'Potpourri';
-	});
 </script>
 
 <div class="container mt-3 white p-2 rounded">
 	<h1>Potpourri!</h1>
+
 	<span>
 		<label for="count">How many? (1-200): </label>
+
 		<input
 			type="number"
 			name="count"
@@ -46,7 +51,8 @@
 			bind:value={count}
 			on:change={getRandomItems}
 		/>
-		<button on:click={getRandomItems} disabled={loading}>Get Random</button>
+
+		<button on:click={getRandomItems} disabled={loading}> Get Random </button>
 	</span>
 </div>
 
@@ -75,10 +81,8 @@
 		</div>
 	{:else if error}
 		<p class="error">{error}</p>
-	{:else if items.length > 0}
-		<FlashCards cards={items} practiceMode={true} />
 	{:else}
-		<p>No items found.</p>
+		<FlashCards />
 	{/if}
 </div>
 
@@ -86,6 +90,7 @@
 	.spin {
 		animation: spin 1s linear infinite;
 	}
+
 	@keyframes spin {
 		100% {
 			transform: rotate(360deg);

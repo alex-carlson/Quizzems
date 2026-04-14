@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import { apiFetch } from '$lib/api/fetchdata';
 import { get } from 'svelte/store';
-import { user } from '$stores/user';
-import { addToast } from '$stores/toast';
+import { user } from '$store/user';
+import { addToast } from '$store/toast';
 import { QuestionType, AnswerType } from '$lib/types/enums';
 
 // User interface for type safety

@@ -1,8 +1,8 @@
 <script>
 	import { onMount } from 'svelte';
-	import { user } from '$stores/user';
+	import { user } from '$store/user';
 	import { deleteQuizScore } from '$lib/api/user';
-	import { addToast } from '$stores/toast';
+	import { addToast } from '$store/toast';
 	import Fa from 'svelte-fa';
 	import { faTrash } from '@fortawesome/free-solid-svg-icons';
 	import { supabase } from '$lib/api/supabaseClient';

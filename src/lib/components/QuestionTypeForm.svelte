@@ -4,7 +4,7 @@
 	import AudioUploader from '../Upload/AudioUploader.svelte';
 	import ImageSuggestions from '../Upload/ImageSuggestions.svelte';
 	import AnswerInput from './AnswerInput.svelte';
-	import { addToast } from '../../stores/toast';
+	import { addToast } from '../../store/toast';
 	import { uploadData, uploadQuestion, uploadAudio } from '../Upload/uploader';
 	import { QuestionType, AnswerType } from '$lib/types/enums';
 	import { Fa } from 'svelte-fa';

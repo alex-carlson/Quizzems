@@ -192,3 +192,11 @@ export function formatTimestamp(timestamp) {
         day: '2-digit'
     });
 }
+
+export function slugify(value = '') {
+    return String(value)
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '');
+}

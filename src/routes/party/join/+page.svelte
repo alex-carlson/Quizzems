@@ -1,7 +1,7 @@
 <script>
 	import { onDestroy } from 'svelte';
-	import { socket, initSocket } from '$stores/socket.js';
-	import { user } from '$stores/user.js';
+	import { socket, initSocket } from '$store/socket.js';
+	import { user } from '$store/user.js';
 	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
 

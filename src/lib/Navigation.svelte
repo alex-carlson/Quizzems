@@ -1,5 +1,5 @@
 <script>
-	import { user } from '$stores/user';
+	import { user } from '../store/user';
 	import UserNav from './UserNav.svelte';
 	import Fa from 'svelte-fa';
 	import {

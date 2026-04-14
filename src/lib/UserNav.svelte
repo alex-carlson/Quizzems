@@ -1,5 +1,5 @@
 <script>
-	import { user } from '$stores/user';
+	import { user } from '$store/user';
 	import ProfilePicture from './ProfilePicture.svelte';
 	import { onMount } from 'svelte';
 

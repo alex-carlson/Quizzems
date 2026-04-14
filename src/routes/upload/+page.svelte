@@ -1,5 +1,5 @@
 <script>
-	import { user } from '$stores/user';
+	import { user } from '$store/user';
 	import Collections from '$lib/Collections.svelte';
 	import CollectionItem from '$lib/Upload/CollectionItem.svelte';
 	import CollectionInfo from '$lib/Upload/CollectionInfo.svelte';
@@ -14,7 +14,7 @@
 	} from '$lib/Upload/uploader';
 	import { supabase } from '$lib/api/supabaseClient';
 	import { apiFetch } from '$lib/api/fetchdata';
-	import { addToast } from '../../stores/toast';
+	import { addToast } from '../../store/toast';
 	import QuestionTypeForm from '$lib/components/QuestionTypeForm.svelte';
 	import { page } from '$app/stores';
 	import { Fa } from 'svelte-fa';

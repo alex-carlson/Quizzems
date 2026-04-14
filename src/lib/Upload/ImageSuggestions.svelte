@@ -1,6 +1,6 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
-	import { addToast } from '../../stores/toast';
+	import { addToast } from '../../store/toast';
 	import { Fa } from 'svelte-fa';
 	import { faSearch } from '@fortawesome/free-solid-svg-icons';
 	const dispatch = createEventDispatcher();

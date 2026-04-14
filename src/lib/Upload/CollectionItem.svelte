@@ -16,8 +16,8 @@
 		faPlus
 	} from '@fortawesome/free-solid-svg-icons';
 	import { uploadData, saveEdit } from './uploader.js';
-	import { addToast } from '../../stores/toast.js';
-	import { user } from '../../stores/user.js';
+	import { addToast } from '../../store/toast.js';
+	import { user } from '../../store/user.js';
 	export let item;
 	export let index;
 	export let editableItemId;

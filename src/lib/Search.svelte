@@ -3,7 +3,7 @@
 	import Fa from 'svelte-fa';
 	import { createEventDispatcher } from 'svelte';
 	import { browser } from '$app/environment';
-	import { addToast } from '../stores/toast';
+	import { addToast } from '../store/toast';
 	let searchTerm = '';
 	let searchResults = [];
 	const dispatch = createEventDispatcher();

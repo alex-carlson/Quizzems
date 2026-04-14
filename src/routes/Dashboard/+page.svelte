@@ -2,7 +2,7 @@
 	import AccountSettings from '$lib/AccountSettings.svelte';
 	import UserScores from '$lib/components/UserScores.svelte';
 	import ProfilePicture from '$lib/ProfilePicture.svelte';
-	import { user, logOutUser } from '../../stores/user';
+	import { user, logOutUser } from '../../store/user';
 
 	let activeTab = 'settings';
 

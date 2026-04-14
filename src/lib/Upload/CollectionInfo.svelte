@@ -3,11 +3,11 @@
 	import FileUpload from '$lib/Upload/FileUpload.svelte';
 	import Cropper from '$lib/Upload/Cropper.svelte';
 	import { uploadThumbnail } from '$lib/Upload/uploader';
-	import { addToast } from '../../stores/toast';
+	import { addToast } from '../../store/toast';
 	import { apiFetch } from '$lib/api/fetchdata';
 	import { onMount } from 'svelte';
 	import { fetchCollaborators } from '$lib/api/user';
-	import { user } from '$stores/user';
+	import { user } from '$store/user';
 	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
 
@@ -20,7 +20,7 @@
 	export let tempTags = '';
 	export let suggestedTags = [];
 	export let isPublic = false;
-	export let isShuffle = false;
+	export let isShuffle = true;
 	export let showCropper = false;
 
 	const dispatch = createEventDispatcher();
