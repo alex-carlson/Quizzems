@@ -2,6 +2,8 @@
 	import { quiz } from '$store/quiz';
 	import { AnswerType } from '$lib/types/enums';
 	import { areStringsClose } from '$lib/api/utils';
+	import Fa from 'svelte-fa';
+	import { faFlag, faLightbulb } from '@fortawesome/free-solid-svg-icons';
 
 	export let card;
 	let selectedChoice = null;
@@ -97,6 +99,22 @@
 		});
 	}
 
+	function handleHint() {
+		const correct = getCorrectAnswer();
+		if (!correct) return;
+		let current = draftAnswer || '';
+		let nextCharIndex = 0;
+		// Find the next character that is not already revealed
+		for (let i = 0; i < correct.length; i++) {
+			if (current[i] !== correct[i]) {
+				nextCharIndex = i;
+				break;
+			}
+		}
+		// Reveal the next character
+		draftAnswer = correct.slice(0, nextCharIndex + 1);
+	}
+
 	function getChoiceClass(choice) {
 		if (!isLockedIn && selectedChoice === null) {
 			return 'choice-option';
@@ -165,33 +183,40 @@
 				</button>
 			{/each}
 		</div>
-	{:else}
-		<!-- FILL IN THE BLANK -->
-		<input
-			type="text"
-			class="form-control answer-box"
-			bind:value={draftAnswer}
-			on:input={(e) => {
-				if (isLockedIn) return;
+	{:else if !item.revealed}
+		<div class="input-row">
+			<button class="flag-btn" on:click={() => updateCard({ revealed: true })}>
+				<Fa icon={faFlag} />
+			</button>
+			<input
+				type="text"
+				class="form-control answer-box"
+				bind:value={draftAnswer}
+				on:input={(e) => {
+					if (isLockedIn) return;
 
-				draftAnswer = e.target.value;
-				checkFillAnswer(draftAnswer);
-			}}
-			on:keydown={(e) => {
-				if (e.key === 'Enter') {
-					e.target.blur();
-				}
-			}}
-		/>
-
-		{#if item.revealed}
-			<span class={item.isCorrect ? 'answer correct' : 'answer incorrect'}>
-				{item.answer}
-			</span>
-
-			{#if item.extra}
-				<span>{item.extra}</span>
+					draftAnswer = e.target.value;
+					checkFillAnswer(draftAnswer);
+				}}
+				on:keydown={(e) => {
+					if (e.key === 'Enter') {
+						e.target.blur();
+					}
+				}}
+			/>
+			{#if $quiz.isPractice}
+				<button class="hint-btn" on:click={handleHint}>
+					<Fa icon={faLightbulb} />
+				</button>
 			{/if}
+		</div>
+	{:else}
+		<span class={item.isCorrect ? 'answer correct' : 'answer incorrect'}>
+			{item.answer}
+		</span>
+
+		{#if item.extra}
+			<span>{item.extra}</span>
 		{/if}
 	{/if}
 </div>
@@ -243,5 +268,38 @@
 	.incorrect {
 		background: red;
 		color: white;
+	}
+
+	.input-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.flag-btn,
+	.hint-btn {
+		width: 45px;
+		min-width: 45px;
+		max-width: 45px;
+		height: 45px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: none;
+		background: transparent;
+		cursor: pointer;
+		padding: 0;
+	}
+
+	.flag-btn {
+		background: red;
+	}
+
+	.hint-btn {
+		background: #1f1f1f;
+	}
+
+	.input-row .form-control.answer-box {
+		flex: 1 1 auto;
 	}
 </style>
