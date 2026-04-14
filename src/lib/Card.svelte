@@ -1,154 +1,53 @@
 <script>
-	import { createEventDispatcher, onDestroy } from 'svelte';
+	import { onDestroy } from 'svelte';
 	import { quiz } from '$store/quiz';
-
-	import { areStringsClose } from '$lib/api/utils';
-	import { AnswerType } from '$lib/types/enums';
 	import QuizAnswer from '$lib/components/quiz/QuizAnswer.svelte';
 
 	import LazyLoadImage from './LazyLoadImage.svelte';
 	import YoutubeAudioPlayer from '$lib/YoutubeAudioPlayer.svelte';
 
 	export let i = 0;
-
-	const dispatch = createEventDispatcher();
+	let refs = {};
 
 	// ---------- STATE ----------
 	$: item = $quiz.cards?.[i];
 	$: currentMode = $quiz.currentMode;
 
 	// ---------- LOCAL ----------
-	let userAnswers = [];
-	let isLockedIn = false;
-	let multipleChoiceSelected = false;
 	let validationTimeout;
-	let cachedValidationResult = null;
-	let lastValidationInput = '';
+	let prevRevealed = false;
 	let container;
 
-	// ---------- STORE HELPERS ----------
-	function updateCard(patch) {
-		quiz.updateCard(i, patch);
+	$: {
+		const wasJustAnswered = !prevRevealed && item.revealed;
+
+		if (wasJustAnswered) {
+			const nextIndex = $quiz.cards.findIndex((c, idx) => idx > i && !c.revealed);
+
+			if (nextIndex !== -1) {
+				setTimeout(() => {
+					scrollToIndex(nextIndex);
+				}, 100);
+			}
+		}
+
+		prevRevealed = item.revealed;
 	}
 
-	export function scrollTo() {
-		container?.scrollIntoView({
-			behavior: 'smooth',
-			block: 'start'
+	function scrollToIndex(index) {
+		const el = document.querySelector(`[data-card-index="${index}"]`);
+		const y = el.getBoundingClientRect().top + window.pageYOffset - 80;
+
+		window.scrollTo({
+			top: y,
+			behavior: 'instant'
 		});
 
 		setTimeout(() => {
-			container?.querySelector('input')?.focus?.();
-		}, 200);
-	}
-
-	function handleInput(idx, e) {
-		if (isLockedIn) return;
-
-		const value = e.target.value;
-
-		if (item?.answerType === AnswerType.MULTIPLE_CHOICE) {
-			multipleChoiceSelected = true;
-			isLockedIn = true;
-
-			const correct = isCorrect(value);
-
-			updateCard({
-				revealed: true,
-				userAnswer: value,
-				isCorrect: correct
-			});
-
-			dispatch('correctAnswer', {
-				index: i,
-				userAnswer: value,
-				isCorrect: correct,
-				revealed: true
-			});
-
-			return;
-		}
-
-		userAnswers[idx] = value;
-		validateAnswer();
-	}
-
-	// ---------- ANSWER LOGIC ----------
-	function normalize(v) {
-		return String(v || '')
-			.toLowerCase()
-			.trim();
-	}
-
-	function isCorrect(valueOverride = null) {
-		if (!item) return false;
-
-		const input = normalize(valueOverride ?? userAnswers[0]);
-
-		if (item.answerType === AnswerType.MULTIPLE_CHOICE) {
-			return areStringsClose(input, normalize(item.answers?.[item.correctAnswerIndex || 0]));
-		}
-
-		if (Array.isArray(item.answer)) {
-			return item.answer.some((a) => areStringsClose(input, normalize(a)));
-		}
-
-		return areStringsClose(input, normalize(item.answer));
-	}
-
-	function validateAnswer() {
-		if (!item) return;
-
-		const key = userAnswers.join('|');
-
-		if (key === lastValidationInput && cachedValidationResult !== null) {
-			return cachedValidationResult;
-		}
-
-		lastValidationInput = key;
-
-		const result = isCorrect();
-		cachedValidationResult = result;
-
-		if (result && !isLockedIn) {
-			isLockedIn = true;
-
-			updateCard({
-				revealed: true,
-				isCorrect: true,
-				userAnswer: userAnswers
-			});
-
-			dispatch('correctAnswer', {
-				index: i,
-				userAnswer: userAnswers,
-				isCorrect: true,
-				revealed: true
-			});
-		}
-
-		return result;
-	}
-
-	// ---------- UI ----------
-	function getChoiceClass(choice, idx) {
-		const base = 'choice-option';
-
-		if (!multipleChoiceSelected) {
-			return userAnswers[0] === choice ? `${base} selected` : base;
-		}
-
-		const correctIdx = item?.correctAnswerIndex ?? 0;
-
-		if (idx === correctIdx) return `${base} correct`;
-		if (userAnswers[0] === choice) return `${base} incorrect`;
-
-		return base;
-	}
-
-	function getRevealedClass() {
-		if (!item?.revealed) return 'answer';
-		return `answer ${item?.isCorrect ? 'correct' : 'incorrect'}`;
+			const input = el.querySelector('input, textarea');
+			input?.focus();
+			input?.select?.();
+		}, 250);
 	}
 
 	onDestroy(() => {
@@ -184,11 +83,8 @@
 		{/if}
 
 		{#if item && item.id}
-			<QuizAnswer card={item} on:correctAnswer={validateAnswer} />
+			<QuizAnswer card={item} />
 		{/if}
-		<details>
-			<pre>{JSON.stringify(item, null, 2)}</pre>
-		</details>
 	</div>
 {/if}
 

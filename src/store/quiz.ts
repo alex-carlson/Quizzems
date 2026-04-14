@@ -24,6 +24,29 @@ const initialState = {
     }
 };
 
+const getInitialState = () => ({
+    hasInitialized: false,
+    isLoading: false,
+    quizStarted: false,
+    isComplete: false,
+    showModal: false,
+    currentMode: 'FLASH_CARDS',
+    isPractice: false,
+    isGrid: false,
+    isFullscreen: false,
+    isShuffle: true,
+    collection: null,
+    cards: [],
+    canEditCollection: false,
+    stats: {
+        correct: 0,
+        total: 0,
+        answered: 0,
+        percentage: 0,
+        isComplete: false
+    }
+});
+
 function createQuizStore() {
     const { subscribe, update, set } = writable(initialState);
 
@@ -50,15 +73,16 @@ function createQuizStore() {
 
         setCanEditCollection: (v) => patch({ canEditCollection: v }),
 
-        updateCard: (index, patchData) =>
+        updateCardById: (id, patch) =>
             update((state) => {
                 const cards = [...state.cards];
 
-                if (!cards[index]) return state;
+                const index = cards.findIndex((c) => c.id === id);
+                if (index === -1) return state;
 
                 cards[index] = {
                     ...cards[index],
-                    ...patchData
+                    ...patch
                 };
 
                 return {
@@ -78,7 +102,7 @@ function createQuizStore() {
             patch({ cards, isLoading: false });
         },
 
-        reset: () => set(initialState)
+        reset: () => set(getInitialState())
     };
 }
 

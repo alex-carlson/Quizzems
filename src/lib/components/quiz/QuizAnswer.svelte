@@ -1,14 +1,13 @@
 <script>
 	import { quiz } from '$store/quiz';
-	import { createEventDispatcher } from 'svelte';
 	import { AnswerType } from '$lib/types/enums';
+	import { areStringsClose } from '$lib/api/utils';
 
 	export let card;
 	let selectedChoice = null;
 	let isCorrectChoice = null;
 	let lastId = null;
-
-	const dispatch = createEventDispatcher();
+	let draftAnswer = '';
 
 	$: item = card;
 	$: currentMode = $quiz.currentMode;
@@ -16,10 +15,12 @@
 	$: if (item?.id && item.id !== lastId) {
 		lastId = item.id;
 
-		isLockedIn = item.revealed ?? false;
+		isLockedIn = false;
 		selectedChoice = item.userAnswer ?? null;
 		isCorrectChoice = item.isCorrect ?? null;
 		optionsCache = null;
+
+		draftAnswer = item.userAnswer ?? '';
 	}
 
 	let isLockedIn = false;
@@ -33,6 +34,23 @@
 		return String(v ?? '')
 			.trim()
 			.toLowerCase();
+	}
+
+	function checkFillAnswer(value) {
+		if (isLockedIn) return;
+
+		const correct = getCorrectAnswer();
+		const isCorrect = areStringsClose(value, correct, 0.95);
+
+		if (isCorrect) {
+			isLockedIn = true;
+
+			updateCard({
+				revealed: true,
+				userAnswer: value,
+				isCorrect: true
+			});
+		}
 	}
 
 	function getCorrectAnswer() {
@@ -73,13 +91,6 @@
 			revealed: true,
 			userAnswer: choice,
 			isCorrect
-		});
-
-		dispatch('correctAnswer', {
-			id: item.id,
-			userAnswer: choice,
-			isCorrect,
-			revealed: true
 		});
 	}
 
@@ -144,13 +155,6 @@
 							userAnswer: choice,
 							isCorrect
 						});
-
-						dispatch('correctAnswer', {
-							index: i,
-							userAnswer: choice,
-							isCorrect,
-							revealed: true
-						});
 					}}
 					disabled={isLockedIn}
 				>
@@ -163,11 +167,17 @@
 		<input
 			type="text"
 			class="form-control answer-box"
-			value={item.userAnswer}
+			bind:value={draftAnswer}
 			on:input={(e) => {
 				if (isLockedIn) return;
 
-				updateCard({ userAnswer: e.target.value });
+				draftAnswer = e.target.value;
+				checkFillAnswer(draftAnswer);
+			}}
+			on:keydown={(e) => {
+				if (e.key === 'Enter') {
+					e.target.blur();
+				}
 			}}
 		/>
 
@@ -210,5 +220,15 @@
 		width: 100%;
 		text-align: center;
 		transition: all 0.15s ease;
+	}
+
+	.correct {
+		background: green;
+		color: white;
+	}
+
+	.incorrect {
+		background: red;
+		color: white;
 	}
 </style>

@@ -184,6 +184,8 @@
 			window.removeEventListener('beforeunload', handleBeforeUnload);
 			window.removeEventListener('popstate', handlePopState);
 		}
+
+		quiz.reset();
 	});
 </script>
 
