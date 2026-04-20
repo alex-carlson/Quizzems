@@ -349,9 +349,8 @@
 			<form on:submit|preventDefault={handleQuestionUpload}>
 				<div class="form-group">
 					<label for="question-input-question">Question:</label>
-					<input
+					<textarea
 						id="question-input-question"
-						type="text"
 						class="form-control"
 						bind:value={item.question}
 						placeholder="Enter the question"

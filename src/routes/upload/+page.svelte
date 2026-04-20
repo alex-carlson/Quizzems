@@ -15,6 +15,7 @@
 	import { supabase } from '$lib/api/supabaseClient';
 	import { apiFetch } from '$lib/api/fetchdata';
 	import { addToast } from '../../store/toast';
+	import { fetchCollectionItems } from '$lib/api/items';
 	import QuestionTypeForm from '$lib/components/QuestionTypeForm.svelte';
 	import { page } from '$app/stores';
 	import { Fa } from 'svelte-fa';
@@ -27,6 +28,7 @@
 	let collections = [];
 	let showCropper = false;
 	let item = {};
+	let items = [];
 	let tempCategory = '';
 	let tempDescription = '';
 	let tempTags = '';
@@ -168,6 +170,10 @@
 				} else {
 					collection.itemsLength = 0;
 				}
+
+				collection.items = await fetchCollectionItems(collection.id, true);
+
+				console.log(collection.items);
 			} else {
 				console.error('No collection data received');
 				addToast({

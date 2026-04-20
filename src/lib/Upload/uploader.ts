@@ -279,7 +279,7 @@ export async function uploadQuestion(data) {
         const questionData = addUserAuthToData({
             uuid: uuidv4(),
             question: data.question,
-            answer: data.answer ?? data.answers,
+            answer: data.answers ?? data.answer,
             category: data.category,
             type: data.type,
             questionType: data.questionType || 'text',

@@ -1,6 +1,5 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
-	import { v4 as uuidv4 } from 'uuid';
 	import Cropper from './Cropper.svelte';
 	import Drawing from './Drawing.svelte';
 	import AnswerInput from '../components/AnswerInput.svelte';
@@ -393,9 +392,9 @@
 >
 	{#if editableItemId === item.id && item.id != null}
 		<div class="editing">
-			{#if item.image != null}
+			{#if item.question_type == 'image' && item.url}
 				{#if !isCropping && !isDrawing}
-					<img src={item.image} alt="To crop" class="border" />
+					<img src={item.url} alt="To crop" class="border" />
 					<div class="actions">
 						{#if isEditable(item.image)}
 							<button class="btn btn-image-action me-2" on:click={() => (isCropping = true)}
@@ -479,8 +478,8 @@
 		<div class="item-display d-flex gap-3 h-100">
 			<div class="content-section flex-half d-flex flex-column">
 				<div class="media-content">
-					{#if item.file || item.image || item.questionType == QuestionType.IMAGE}
-						<img class="preview" src={item.file || item.image} alt="Preview" />
+					{#if item.question_type === 'image' && item.url}
+						<img class="preview" src={item.url} alt="Preview" />
 					{:else if item.audio != null}
 						<div class="audio">
 							{#if item.thumbnail}
@@ -504,11 +503,12 @@
 			</div>
 			<div class="answer-section flex-half d-flex flex-column">
 				<div class="answer-display">
-					{#if item.answerType === AnswerType.SINGLE || !isValidAnswerType(item.answerType)}
+					<span>Answer Type: {item.answer_type}</span>
+					{#if item.answer_type === AnswerType.SINGLE || !isValidAnswerType(item.answer_type)}
 						<span class="answer-text">{item.answer}</span>
-					{:else if item.answerType === AnswerType.MULTIPLE_CHOICE}
+					{:else if item.answer_type === AnswerType.MULTIPLE_CHOICE}
 						<small class="text-muted mb-2">Multiple Choice:</small>
-						{#each item.answers || [] as answer, index}
+						{#each item.answer || [] as answer, index}
 							<span class="answer-option" class:correct={item.correctAnswerIndex === index}>
 								{index + 1}. {answer}
 								{#if item.correctAnswerIndex === index}✓{/if}
@@ -516,12 +516,12 @@
 						{/each}
 					{:else}
 						<small class="text-muted mb-2"
-							>Multi-Answer (Required: {item.numRequired ||
-								(item.answers && item.answers.length) ||
+							>Multi-Answer (Required: {item.num_required ||
+								(item.answer && item.answer.length) ||
 								0}):</small
 						>
-						{#each item.answers || [] as answer, index}
-							<span class="answer-option">{index + 1}. {answer}</span>
+						{#each item.answer || [] as a, index}
+							<span class="answer-option">{index + 1}. {a}</span>
 						{/each}
 					{/if}
 				</div>
