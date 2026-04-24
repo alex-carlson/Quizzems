@@ -392,7 +392,7 @@
 >
 	{#if editableItemId === item.id && item.id != null}
 		<div class="editing">
-			{#if item.question_type == 'image' && item.url}
+			{#if (item.type === 'image' || item.type === 'default') && item.url}
 				{#if !isCropping && !isDrawing}
 					<img src={item.url} alt="To crop" class="border" />
 					<div class="actions">
@@ -478,7 +478,7 @@
 		<div class="item-display d-flex gap-3 h-100">
 			<div class="content-section flex-half d-flex flex-column">
 				<div class="media-content">
-					{#if item.question_type === 'image' && item.url}
+					{#if (item.type === 'image' || item.type === 'default') && item.url}
 						<img class="preview" src={item.url} alt="Preview" />
 					{:else if item.audio != null}
 						<div class="audio">
