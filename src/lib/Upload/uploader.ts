@@ -74,7 +74,7 @@ export async function createCollection(category) {
 // Remove item
 export async function removeItem(itemId, category) {
     try {
-        const result = await apiFetch('/items/remove', 'POST', {
+        const result = await apiFetch('/items/delete', 'DELETE', {
             category,
             itemId
         });

@@ -497,7 +497,7 @@
 				</div>
 				{#if item.supplemental}
 					<div class="supplemental-content">
-						<span>{@html (item.supplemental || '').replace(/\n/g, '<br>')}</span>
+						<span>{item.supplemental}</span>
 					</div>
 				{/if}
 			</div>
@@ -508,7 +508,7 @@
 						<span class="answer-text">{item.answer}</span>
 					{:else if item.answer_type === AnswerType.MULTIPLE_CHOICE}
 						<small class="text-muted mb-2">Multiple Choice:</small>
-						{#each item.answer || [] as answer, index}
+						{#each item.answer || [] as answer, index (index)}
 							<span class="answer-option" class:correct={item.correctAnswerIndex === index}>
 								{index + 1}. {answer}
 								{#if item.correctAnswerIndex === index}✓{/if}
@@ -520,7 +520,7 @@
 								(item.answer && item.answer.length) ||
 								0}):</small
 						>
-						{#each item.answer || [] as a, index}
+						{#each item.answer || [] as a, index (index)}
 							<span class="answer-option">{index + 1}. {a}</span>
 						{/each}
 					{/if}
@@ -554,7 +554,7 @@
 					>
 						<Fa icon={faPenToSquare} />
 					</button>
-					<button class="btn btn-outline-danger btn-sm" on:click={() => removeItemHandler(item.id)}>
+					<button class="btn btn-outline-danger btn-sm" on:click={() => removeItemHandler()}>
 						<Fa icon={faTrashCan} />
 					</button>
 				</div>
