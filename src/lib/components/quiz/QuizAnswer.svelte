@@ -49,11 +49,14 @@
 	function checkFillAnswer(values) {
 		if (isLockedIn) return;
 
+		// normalize to array
+		const inputValues = Array.isArray(values) ? values : [values];
+
 		const correctArr = getCorrectAnswer()
 			.filter(Boolean)
 			.map((v) => v.toString().trim().toLowerCase());
 
-		values.forEach((val, i) => {
+		inputValues.forEach((val, i) => {
 			if (lockedAnswers[i]) return;
 
 			const normalized = (val ?? '').toString().trim().toLowerCase();
@@ -73,7 +76,7 @@
 
 			updateCard({
 				revealed: true,
-				userAnswer: values,
+				userAnswer: inputValues,
 				isCorrect: true
 			});
 		}
@@ -123,10 +126,14 @@
 	}
 
 	function handleHint() {
-		const correct = getCorrectAnswer();
-		if (!correct) return;
+		const correctArr = getCorrectAnswer();
+		if (!correctArr || correctArr.length === 0) return;
+
+		const correct = String(correctArr[0]); // use first answer
 		let current = draftAnswer || '';
-		let nextCharIndex = 0;
+
+		let nextCharIndex = correct.length - 1;
+
 		// Find the next character that is not already revealed
 		for (let i = 0; i < correct.length; i++) {
 			if (current[i] !== correct[i]) {
@@ -134,7 +141,8 @@
 				break;
 			}
 		}
-		// Reveal the next character
+
+		// Reveal up to that character
 		draftAnswer = correct.slice(0, nextCharIndex + 1);
 	}
 
@@ -220,7 +228,7 @@
 				<Fa icon={faFlag} />
 			</button>
 			<div class="w-100">
-				{#if item.num_required}
+				{#if item.num_required && draftAnswers.length > 1}
 					{#each Array(item.num_required) as _, index}
 						<input
 							type="text"
@@ -244,7 +252,7 @@
 							if (isLockedIn) return;
 
 							draftAnswer = e.target.value;
-							checkFillAnswer(draftAnswer);
+							checkFillAnswer([draftAnswer]);
 						}}
 						on:keydown={(e) => {
 							if (e.key === 'Enter') {
