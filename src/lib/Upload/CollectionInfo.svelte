@@ -55,8 +55,6 @@
 				category: collection?.category
 			};
 
-			console.log('Temporary item for upload:', tempItem);
-
 			// Upload the new image
 			const result = await uploadThumbnail(file, collection.category);
 
@@ -170,9 +168,6 @@
 					addToast({ type: 'success', message: `${user.username} added as collaborator.` });
 				} else {
 					addToast({ type: 'error', message: `Failed to add collaborator.` });
-					if (result) {
-						console.log(result);
-					}
 				}
 			} catch (error) {
 				addToast({ type: 'error', message: `Server error adding collaborator.` });
@@ -206,9 +201,6 @@
 					addToast({ type: 'success', message: `${user.username} removed as collaborator.` });
 				} else {
 					addToast({ type: 'error', message: `Failed to remove collaborator.` });
-					if (result) {
-						console.log(result);
-					}
 				}
 			} catch (error) {
 				addToast({ type: 'error', message: `Server error removing collaborator.` });
@@ -284,7 +276,6 @@
 									try {
 										const result = await uploadThumbnail(event.detail, collection.category);
 										if (result) {
-											console.log('Thumbnail upload successful:', result);
 											// Clear the image after successful upload
 											if (thumbnailUploader && typeof thumbnailUploader.clearImage === 'function') {
 												thumbnailUploader.clearImage();

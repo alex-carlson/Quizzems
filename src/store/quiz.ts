@@ -14,6 +14,7 @@ const getInitialState = () => ({
     isShuffle: true,
     showCategory: false,
     collection: null,
+    collectionId: null,
     cards: [],
     canEditCollection: false,
     stats: {
@@ -34,6 +35,7 @@ function createQuizStore() {
         subscribe,
 
         setCards: (cards) => patch({ cards }),
+        setCollectionId: (collectionId) => patch({ collectionId }),
 
         setMode: (currentMode) => patch({ currentMode }),
         setIsPractice: (isPractice) => patch({ isPractice }),

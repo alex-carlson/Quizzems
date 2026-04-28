@@ -80,7 +80,6 @@
 	async function uploadProfilePicture(file) {
 		const headers = await getAuthHeaders();
 		if (file) {
-			console.log('File selected:', file);
 			const jpgBlob = await convertImageToJPG(file[0]);
 
 			const formData = new FormData();

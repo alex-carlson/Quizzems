@@ -215,7 +215,6 @@
 					thumbnail: snippet.thumbnails?.medium?.url || '',
 					title: snippet.title || ''
 				};
-				console.log('Updated item with metadata:', updatedItem);
 				dispatch('saveEdit', updatedItem);
 			} else {
 				console.warn('No video data found for ID:', videoId);
@@ -249,8 +248,6 @@
 				questionType: item.questionType || QuestionType.IMAGE,
 				answerType: item.answerType || AnswerType.SINGLE
 			};
-
-			console.log('Temporary item for upload with existing ID validation:', tempItem);
 
 			// Upload the new image with existing item ID for validation - use a new UUID but include update flags
 			const result = await uploadData(tempItem, item.id, false);
@@ -294,7 +291,6 @@
 	}
 
 	async function onCropped(event) {
-		console.log('Cropped event received:', event);
 		const croppedFile = event.detail;
 
 		//get extension from type
@@ -305,7 +301,6 @@
 	}
 
 	async function onSave(event) {
-		console.log('Drawing saved:', event);
 		const { dataURL } = event.detail;
 
 		// Convert dataURL to File object

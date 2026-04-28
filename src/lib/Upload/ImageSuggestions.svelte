@@ -70,10 +70,8 @@
 		}
 
 		try {
-			console.log('Making API call to:', url);
 			const res = await fetch(url);
 			const data = await res.json();
-			console.log('API response received:', data);
 
 			if (data.error && data.error.errors && data.error.errors[0].reason === 'dailyLimitExceeded') {
 				addToast({

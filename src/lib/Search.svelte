@@ -32,7 +32,6 @@
 
 			const data = await response.json();
 			searchResults = data;
-			console.log('Search results:', searchResults);
 		} catch (error) {
 			console.error('Error fetching search results:', error);
 			addToast({

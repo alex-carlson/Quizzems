@@ -14,8 +14,6 @@
 
 	function refresh() {
 		randomItemsPromise = fetchRandomCollections(3);
-		console.log('Random items promise initialized');
-		console.log(randomItemsPromise);
 	}
 
 	// convert timestamptz to mm/dd/yyyy format

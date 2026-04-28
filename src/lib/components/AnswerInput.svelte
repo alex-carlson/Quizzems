@@ -77,7 +77,6 @@
 				}
 
 				item.answerType = AnswerType.MULTI_ANSWER;
-				console.log(item);
 				break;
 			}
 		}

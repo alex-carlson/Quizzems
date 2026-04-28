@@ -172,8 +172,6 @@
 				}
 
 				collection.items = await fetchCollectionItems(collection.id, true);
-
-				console.log(collection.items);
 			} else {
 				console.error('No collection data received');
 				addToast({
@@ -338,19 +336,16 @@
 										on:removeItem={async () => {
 											const updatedItems = await removeItem(item.id, collection.category);
 											if (updatedItems) {
-												console.log('updatedItems:', updatedItems);
 												collection.items = updatedItems.items;
 												collection.itemsLength = updatedItems.items.length;
 											}
 										}}
 										on:saveEdit={async (e) => {
-											console.log('Save edit event:', e.detail);
 											const d = {
 												collection: collection.category,
 												author_id: $user.public_id,
 												...e.detail
 											};
-											console.log('Data to save:', d);
 											const result = await saveEdit(d);
 											if (result) {
 												collections = result;
@@ -408,7 +403,6 @@
 							{collection}
 							{questionType}
 							on:itemAdded={(e) => {
-								console.log('Item added event received:', e.detail);
 								// Update the collection with new items
 								collection.items = e.detail.items;
 								collection.itemsLength = e.detail.itemsLength;

@@ -198,7 +198,6 @@
 			});
 			return;
 		}
-		console.log('Uploading question:', item);
 		const newItems = await uploadQuestion({
 			...item,
 			questionType: QuestionType.TEXT,
@@ -284,7 +283,6 @@
 							<FileUpload
 								bind:this={fileUploadComponent}
 								on:uploadImage={(event) => {
-									console.log('Upload event received:', event.detail, typeof event.detail);
 									// Handle both file uploads and URL uploads
 									if (typeof event.detail === 'string') {
 										// URL upload
@@ -297,7 +295,6 @@
 										item.file = event.detail;
 										item.src = '';
 									}
-									console.log('Item state after upload:', { file: item.file, src: item.src });
 								}}
 							/>
 						</div>
@@ -328,7 +325,6 @@
 					<div class="mt-3">
 						<AudioUploader
 							on:addSong={(e) => {
-								console.log(e);
 								item.videoId = e.detail.videoId;
 								item.title = e.detail.title;
 								item.thumbnail = e.detail.thumbnail;

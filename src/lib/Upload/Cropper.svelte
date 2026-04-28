@@ -87,7 +87,6 @@
 				(blob) => {
 					if (blob) {
 						const file = new File([blob], `cropped.${fileExtension}`, { type: mimeType });
-						console.log('Cropped image:', file);
 						dispatch('cropped', file);
 						resolve(file);
 					} else {

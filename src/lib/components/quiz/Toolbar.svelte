@@ -11,6 +11,8 @@
 	} from '@fortawesome/free-solid-svg-icons';
 
 	import { quiz } from '$store/quiz.js';
+	import { goto } from '$app/navigation';
+	import { get } from 'svelte/store';
 
 	$: cards = $quiz.cards || [];
 	$: isGrid = $quiz.isGrid;
@@ -28,8 +30,7 @@
 	}
 
 	function editCollection() {
-		// if you have a store action:
-		quiz.setEditing?.(true);
+		goto(`/upload?collectionId=${get(quiz).collectionId}`);
 	}
 
 	function goFullscreen() {

@@ -12,6 +12,7 @@
 	import { getScoreMessage } from '$lib/api/quizScore.js';
 	export let data;
 	import { quiz } from '$store/quiz.js';
+	import { get } from 'svelte/store';
 	import { fetchCollectionItems } from '$lib/api/items.js';
 
 	// Destructure page data with fallbacks
@@ -47,8 +48,6 @@
 		}
 
 		const currentUserName = ($user.username || '').toLowerCase();
-
-		// ✅ get author from store instead of local variable
 		const authorFromCollection = ($quiz.collection?.author || '').toLowerCase();
 
 		const authorSlugParam = $page.params?.author_slug || '';
@@ -113,6 +112,7 @@
 		}
 		loading = false;
 		refreshEditPermission();
+		quiz.setCanEditCollection(canEditCollection);
 	}
 
 	function setScore() {
@@ -171,6 +171,7 @@
 
 		quiz.setCards(cards);
 		quiz.setQuizStarted(false);
+		quiz.setCollectionId(collectionId);
 
 		if (typeof window !== 'undefined') {
 			history.pushState(null, '', window.location.href);
