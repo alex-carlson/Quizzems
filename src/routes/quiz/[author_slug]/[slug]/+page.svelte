@@ -89,6 +89,7 @@
 	function startQuiz(isPractice = false) {
 		quiz.setQuizStarted(true);
 		quiz.setIsPractice(isPractice);
+		quiz.setShowCategory(false);
 
 		if (state.isShuffle) {
 			// Fisher-Yates shuffle algorithm
