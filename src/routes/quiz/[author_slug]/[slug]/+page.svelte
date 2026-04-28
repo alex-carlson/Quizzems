@@ -43,8 +43,7 @@
 
 	async function refreshEditPermission() {
 		if (!collectionId || !$user?.id) {
-			canEditCollection = false;
-			return;
+			return false;
 		}
 
 		const currentUserName = ($user.username || '').toLowerCase();
@@ -57,8 +56,7 @@
 			(currentUserName && slugify(currentUserName) === authorSlugParam);
 
 		if (isAuthor) {
-			canEditCollection = true;
-			return;
+			return true;
 		}
 
 		try {
@@ -70,7 +68,7 @@
 					? collaborators
 					: [];
 
-			canEditCollection = list.some((collab) => {
+			return list.some((collab) => {
 				const collabUsername = (collab?.username || '').toLowerCase();
 
 				return (
@@ -81,7 +79,7 @@
 			});
 		} catch (error) {
 			console.error('Failed to check collaborator permissions:', error);
-			canEditCollection = false;
+			return false;
 		}
 	}
 
@@ -111,8 +109,6 @@
 			incrementPlayCounter(collectionId);
 		}
 		loading = false;
-		refreshEditPermission();
-		quiz.setCanEditCollection(canEditCollection);
 	}
 
 	function setScore() {
@@ -172,6 +168,9 @@
 		quiz.setCards(cards);
 		quiz.setQuizStarted(false);
 		quiz.setCollectionId(collectionId);
+		const canEditCollection = await refreshEditPermission();
+
+		quiz.setCanEditCollection(canEditCollection);
 
 		if (typeof window !== 'undefined') {
 			history.pushState(null, '', window.location.href);
