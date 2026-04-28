@@ -180,9 +180,7 @@ export async function uploadData(item, uuid = uuidv4(), forceJpg = false) {
                 questionType: item.questionType,
                 answerType: item.answerType,
                 category: item.category,
-                // Add existing item ID for server validation during updates
                 existingItemId: item.existingItemId,
-                // Add update flag to indicate this is an update operation  
                 isUpdate: item.isUpdate,
             }, usr, item.category);
             return await apiFetch('/items/upload-url', 'POST', data);

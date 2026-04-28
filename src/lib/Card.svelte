@@ -5,6 +5,7 @@
 
 	import LazyLoadImage from './LazyLoadImage.svelte';
 	import YoutubeAudioPlayer from '$lib/YoutubeAudioPlayer.svelte';
+	import { QuestionType } from './types/enums';
 
 	export let i = 0;
 	let refs = {};
@@ -65,6 +66,9 @@
 		bind:this={container}
 		on:keydown={(e) => currentMode === 'FLASH_CARDS' && e.key === 'Enter'}
 	>
+		{#if $quiz.showCategory}
+			<h3>{item.collection_name}</h3>
+		{/if}
 		{#if item.type === 'audio'}
 			<YoutubeAudioPlayer id={item.id} videoId={item.audio} />
 		{/if}
@@ -77,7 +81,7 @@
 			<span>{item.supplemental}</span>
 		{/if}
 
-		{#if item.question}
+		{#if item.question && item.question_type === QuestionType.TEXT}
 			<h2 class="p-3">{item.question}</h2>
 		{/if}
 

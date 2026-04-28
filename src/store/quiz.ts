@@ -12,6 +12,7 @@ const getInitialState = () => ({
     isGrid: false,
     isFullscreen: false,
     isShuffle: true,
+    showCategory: false,
     collection: null,
     cards: [],
     canEditCollection: false,
@@ -41,6 +42,8 @@ function createQuizStore() {
         toggleFullscreen: () => update(s => ({ ...s, isFullscreen: !s.isFullscreen })),
 
         setFullscreen: (v) => update(s => ({ ...s, isFullscreen: v })),
+
+        setShowCategory: (v) => update(s => ({ ...s, showCategory: v })),
 
         setQuizStarted: (v) => patch({ quizStarted: v }),
         setQuizCompleted: (v) => patch({ isComplete: v }),

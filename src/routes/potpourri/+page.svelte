@@ -22,6 +22,7 @@
 			// optional: if you want to reset quiz state per fetch
 			quiz.setQuizStarted(false);
 			quiz.setQuizCompleted(false);
+			quiz.setShowCategory(true);
 		} catch (e) {
 			error = e?.message || 'Failed to fetch items';
 			quiz.setCards([]);

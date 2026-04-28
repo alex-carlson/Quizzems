@@ -59,13 +59,6 @@
 
 	// Upload handlers
 	async function handleImageUpload() {
-		console.log('handleImageUpload called with item:', {
-			file: item.file,
-			src: item.src,
-			answer: item.answer,
-			answers: item.answers
-		});
-
 		if (
 			(item.answer ?? '').trim() === '' &&
 			(Array.isArray(item.answers) ? item.answers.join('').trim() : (item.answers ?? '').trim()) ===
@@ -77,6 +70,7 @@
 			});
 			return;
 		}
+
 		if (!item.src && !item.file) {
 			console.log('No image found - src:', item.src, 'file:', item.file);
 			addToast({
