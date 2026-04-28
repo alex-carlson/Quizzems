@@ -24,3 +24,13 @@ export async function fetchCollectionItems(id, requireAuth = false) {
         return [];
     }
 }
+
+export async function fetchCollectionsCount() {
+    const res = await apiFetch('/items/collectionCount', 'GET', null, false, false);
+    return res?.count ?? 0;
+}
+
+export async function fetchCardCount() {
+    const res = await apiFetch('/items/cardCount', 'GET', null, false, false);
+    return res?.count ?? 0;
+}

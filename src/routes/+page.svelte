@@ -4,16 +4,28 @@
 	import { goto } from '$app/navigation';
 	import Collections from '$lib/Collections.svelte';
 	import Tags from '$lib/components/Tags.svelte';
+	import { fetchCardCount, fetchCollectionsCount } from '$lib/api/items';
 
 	let pageWidth = 0;
+	let cardCount = 0;
+	let collectionCount = 0;
 
-	onMount(() => {
+	onMount(async () => {
 		if (browser) {
 			pageWidth = window.innerWidth;
 			window.addEventListener('resize', () => {
 				pageWidth = window.innerWidth;
 			});
 			document.title = 'Quizzems';
+
+			try {
+				const [cards, collections] = await Promise.all([fetchCardCount(), fetchCollectionsCount()]);
+
+				cardCount = cards;
+				collectionCount = collections;
+			} catch (err) {
+				console.error('Failed to load stats:', err);
+			}
 		}
 	});
 
@@ -42,6 +54,9 @@
 			fetchpriority="high"
 			aria-label="Quizzems Logo"
 		/>
+		<h4 class="pt-4">
+			{cardCount} questions across {collectionCount} quizzes!
+		</h4>
 	</div>
 </div>
 
