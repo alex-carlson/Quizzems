@@ -12,7 +12,6 @@
 	import { getScoreMessage } from '$lib/api/quizScore.js';
 	export let data;
 	import { quiz } from '$store/quiz.js';
-	import { get } from 'svelte/store';
 	import { fetchCollectionItems } from '$lib/api/items.js';
 
 	// Destructure page data with fallbacks
@@ -21,7 +20,6 @@
 	let timer = 0;
 	let interval = null;
 	let loading = true;
-	let canEditCollection = false;
 	let score = 0;
 	let cards = [];
 

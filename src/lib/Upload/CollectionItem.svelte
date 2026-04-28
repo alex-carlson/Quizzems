@@ -17,6 +17,7 @@
 	import { uploadData, saveEdit } from './uploader.js';
 	import { addToast } from '../../store/toast.js';
 	import { user } from '../../store/user.js';
+	import { json } from '@sveltejs/kit';
 	export let item;
 	export let index;
 	export let editableItemId;
@@ -222,6 +223,10 @@
 		} catch (err) {
 			console.error('Error fetching video data:', err);
 		}
+	}
+
+	function normalizeAnswers(answer) {
+		return Array.isArray(answer) ? answer : answer ? [answer] : [];
 	}
 
 	async function uploadChangedImage(file, fileName = null) {
@@ -477,14 +482,8 @@
 						<img class="preview" src={item.url} alt="Preview" />
 					{:else if item.audio != null}
 						<div class="audio">
-							{#if item.thumbnail}
-								<img src={item.thumbnail} alt={item.answer} />
-								<p>{item.title || item.answer}</p>
-							{:else}
-								<button on:click={() => addItemMetaData(item.audio)}>
-									<Fa icon={faPenToSquare} />Update Data</button
-								>
-							{/if}
+							<img src={`https://img.youtube.com/vi/${item.url}/default.jpg`} alt={item.answer} />
+							<p>{item.yt_title}</p>
 						</div>
 					{:else}
 						<span class="question">{item.question}</span>
@@ -498,7 +497,6 @@
 			</div>
 			<div class="answer-section flex-half d-flex flex-column">
 				<div class="answer-display">
-					<span>Answer Type: {item.answer_type}</span>
 					{#if item.answer_type === AnswerType.SINGLE || !isValidAnswerType(item.answer_type)}
 						<span class="answer-text">{item.answer}</span>
 					{:else if item.answer_type === AnswerType.MULTIPLE_CHOICE}
@@ -510,12 +508,11 @@
 							</span>
 						{/each}
 					{:else}
-						<small class="text-muted mb-2"
-							>Multi-Answer (Required: {item.num_required ||
-								(item.answer && item.answer.length) ||
-								0}):</small
-						>
-						{#each item.answer || [] as a, index (index)}
+						<small class="text-muted mb-2">
+							Multi-Answer (Required: {item.num_required || normalizeAnswers(item.answer).length}):
+						</small>
+
+						{#each normalizeAnswers(item.answer) as a, index (index)}
 							<span class="answer-option">{index + 1}. {a}</span>
 						{/each}
 					{/if}
