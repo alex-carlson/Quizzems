@@ -257,7 +257,7 @@
 	<div class="tab-content">
 		{#if questionType === 'Image'}
 			<!-- Image Sub-tabs -->
-			<div class="sub-tabs mb-3">
+			<div class="sub-tabs">
 				<button
 					class="sub-tab-btn {imageSubTab === 'upload' ? 'active' : ''}"
 					on:click={() => (imageSubTab = 'upload')}
@@ -272,9 +272,7 @@
 				</button>
 			</div>
 
-			<div class="form-group mt-3">
-				<AnswerInput bind:item idPrefix="answer-image" />
-			</div>
+			<AnswerInput bind:item idPrefix="answer-image" />
 
 			<form on:submit|preventDefault={handleImageUpload}>
 				<div class="row">
@@ -356,7 +354,7 @@
 <style>
 	.nav-tabs {
 		border-bottom: 1px solid #e9ecef;
-		margin-bottom: 20px;
+		margin-bottom: 4px;
 		background: #f8f9fa;
 		border-radius: 8px 8px 0 0;
 		padding: 4px;
@@ -397,7 +395,6 @@
 		border: 1px solid #e9ecef;
 		border-top: none;
 		border-radius: 0 0 8px 8px;
-		padding: 24px;
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 	}
 

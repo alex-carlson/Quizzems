@@ -240,10 +240,6 @@
 </div>
 
 <style>
-	.suggestions {
-		margin-top: 1rem;
-	}
-
 	.search-controls {
 		display: flex;
 		flex-direction: column;

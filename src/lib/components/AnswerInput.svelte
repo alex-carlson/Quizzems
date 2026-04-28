@@ -255,10 +255,6 @@
 		gap: 8px;
 	}
 
-	.form-group {
-		margin-bottom: 20px;
-	}
-
 	.form-group label {
 		font-weight: 600;
 		margin-bottom: 8px;

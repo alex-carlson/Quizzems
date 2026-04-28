@@ -219,12 +219,12 @@
 			<button class="flag-btn" on:click={() => updateCard({ revealed: true })}>
 				<Fa icon={faFlag} />
 			</button>
-			<div>
+			<div class="w-100">
 				{#if item.num_required}
 					{#each Array(item.num_required) as _, index}
 						<input
 							type="text"
-							class="form-control answer-box mb-2"
+							class="form-control answer-box"
 							bind:value={draftAnswers[index]}
 							disabled={lockedAnswers[index]}
 							on:input={(e) => {

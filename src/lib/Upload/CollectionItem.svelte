@@ -396,7 +396,6 @@
 >
 	{#if editableItemId === item.id && item.id != null}
 		<div class="editing">
-			<pre>{JSON.stringify(item, null, 2)}</pre>
 			{#if (item.type === 'image' || item.type === 'default') && item.url}
 				{#if !isCropping && !isDrawing}
 					<img src={item.url} alt="To crop" class="border" />
