@@ -12186,7 +12186,10 @@ ul img {
   .list.condensed ul {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-    gap: 12px;
+    min-width: 680px;
+    column-gap: 4px;
+    row-gap: 12px;
+    /* increased Y spacing */
   }
 }
 .list.condensed ul li {

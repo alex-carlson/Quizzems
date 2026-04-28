@@ -217,7 +217,6 @@
 			try {
 				const result = await fetchCollaborators(collection.id);
 				tempCollaborators = Array.isArray(result.data) ? result.data : [];
-				console.log('Collaborators: ', tempCollaborators);
 			} catch (error) {
 				tempCollaborators = [];
 				addToast({ type: 'error', message: 'Failed to load collaborators.' });

@@ -254,6 +254,8 @@
 				answerType: item.answerType || AnswerType.SINGLE
 			};
 
+			console.log('Uploading data', tempItem);
+
 			// Upload the new image with existing item ID for validation - use a new UUID but include update flags
 			const result = await uploadData(tempItem, item.id, false);
 
@@ -300,6 +302,8 @@
 
 		//get extension from type
 		const fileExtension = croppedFile.type.split('/')[1] || 'png';
+
+		console.log('Uploading changed image with data: ', croppedFile);
 
 		await uploadChangedImage(croppedFile, 'cropped-image.' + fileExtension);
 		isCropping = false; // Reset cropping state
@@ -392,11 +396,12 @@
 >
 	{#if editableItemId === item.id && item.id != null}
 		<div class="editing">
+			<pre>{JSON.stringify(item, null, 2)}</pre>
 			{#if (item.type === 'image' || item.type === 'default') && item.url}
 				{#if !isCropping && !isDrawing}
 					<img src={item.url} alt="To crop" class="border" />
 					<div class="actions">
-						{#if isEditable(item.image)}
+						{#if isEditable(item.url)}
 							<button class="btn btn-image-action me-2" on:click={() => (isCropping = true)}
 								>Crop</button
 							>
@@ -407,7 +412,7 @@
 					<div class="cropper-section mb-3">
 						<Cropper
 							bind:this={cropperComponent}
-							src={item.image}
+							src={item.url}
 							on:cropped={onCropped}
 							on:cancel={onCancel}
 						/>
@@ -416,7 +421,7 @@
 					<div class="drawing-section mb-3">
 						<Drawing
 							bind:this={drawingComponent}
-							src={item.image}
+							src={item.url}
 							on:save={onSave}
 							on:cancel={onCancel}
 						/>

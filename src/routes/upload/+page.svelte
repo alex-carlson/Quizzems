@@ -238,7 +238,7 @@
 	<title>Manage Collections</title>
 </svelte:head>
 
-<div class="form white uploader py-4 col-12 col-md-10 col-lg-8 mx-auto">
+<div class="form white uploader py-4 px-2 col-12 col-md-10 col-lg-8 mx-auto">
 	{#if !$user}
 		<div class="text-center py-5">
 			<p class="mb-3">
@@ -261,42 +261,40 @@
 		</div>
 
 		{#if collection === null}
-			<div class="create-section mb-5">
-				<div class="card p-4">
-					<h2 class="mb-4">Create a new Quiz</h2>
-					<div class="mb-3">
-						<input
-							type="text"
-							class="form-control"
-							bind:value={tempCategory}
-							placeholder="Category Name"
-						/>
-					</div>
-					<button
-						class="btn btn-primary"
-						on:click={async () => {
-							const result = await createCollection(tempCategory);
-							if (result) {
-								await loadCollections();
-								// Handle both array and single object responses
-								const newCol = Array.isArray(result) ? result[0] : result;
-								if (newCol && newCol.id) {
-									// Find the collection in the loaded collections or use the returned data
-									collection = collections.find((c) => c.id === newCol.id) || newCol;
-									setCollection(newCol.id);
-								} else {
-									console.error('Invalid collection response:', result);
-									addToast({
-										type: 'error',
-										message: 'Collection created but failed to load. Please refresh the page.'
-									});
-								}
-							}
-						}}
-					>
-						Create
-					</button>
+			<div class="create-section">
+				<h2 class="mb-4">Create a new Quiz</h2>
+				<div class="mb-3">
+					<input
+						type="text"
+						class="form-control"
+						bind:value={tempCategory}
+						placeholder="Category Name"
+					/>
 				</div>
+				<button
+					class="btn btn-primary"
+					on:click={async () => {
+						const result = await createCollection(tempCategory);
+						if (result) {
+							await loadCollections();
+							// Handle both array and single object responses
+							const newCol = Array.isArray(result) ? result[0] : result;
+							if (newCol && newCol.id) {
+								// Find the collection in the loaded collections or use the returned data
+								collection = collections.find((c) => c.id === newCol.id) || newCol;
+								setCollection(newCol.id);
+							} else {
+								console.error('Invalid collection response:', result);
+								addToast({
+									type: 'error',
+									message: 'Collection created but failed to load. Please refresh the page.'
+								});
+							}
+						}
+					}}
+				>
+					Create
+				</button>
 			</div>
 		{:else}
 			<CollectionInfo

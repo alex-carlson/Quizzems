@@ -220,7 +220,6 @@
 				<Fa icon={faFlag} />
 			</button>
 			<div>
-				<pre>{JSON.stringify(item, null, 2)}</pre>
 				{#if item.num_required}
 					{#each Array(item.num_required) as _, index}
 						<input
@@ -343,7 +342,7 @@
 	}
 
 	.flag-btn {
-		background: red;
+		background: #da0000;
 	}
 
 	.hint-btn {
