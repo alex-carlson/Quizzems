@@ -262,9 +262,8 @@
 		</div>
 	{:else}
 		<span class={item.isCorrect ? 'answer correct' : 'answer incorrect'}>
-			{item.answer}
+			{item.answer[0]}
 		</span>
-
 		{#if item.extra}
 			<span>{item.extra}</span>
 		{/if}
