@@ -10,25 +10,31 @@
 	let isCorrectChoice = null;
 	let lastId = null;
 	let draftAnswer = '';
+	let draftAnswers = [];
+	let lockedAnswers = [];
+	let usedCorrect = new Set();
+	let optionsCacheMap = new Map();
 
 	$: item = card;
 	$: currentMode = $quiz.currentMode;
 
-	// Reset state when card changes (not mode)
 	$: if (item?.id && item.id !== lastId) {
 		lastId = item.id;
+
 		isLockedIn = false;
-		selectedChoice = item.userAnswer ?? null;
-		isCorrectChoice = item.isCorrect ?? null;
-		draftAnswer = item.userAnswer ?? '';
-		optionsCacheMap.delete(item.id); // Reset options for this card only on card change
+		selectedChoice = null;
+		isCorrectChoice = null;
+
+		draftAnswer = '';
+		draftAnswers = item.num_required ? Array(item.num_required).fill('') : [];
+
+		lockedAnswers = [];
+		usedCorrect = new Set();
+
+		optionsCacheMap.delete(item.id);
 	}
 
 	let isLockedIn = false;
-	let optionsCache = null;
-
-	// Cache options per card id to prevent reordering on mode change
-	let optionsCacheMap = new Map();
 
 	function updateCard(patch) {
 		quiz.updateCardById(item.id, patch);
@@ -40,25 +46,41 @@
 			.toLowerCase();
 	}
 
-	function checkFillAnswer(value) {
+	function checkFillAnswer(values) {
 		if (isLockedIn) return;
 
-		const correct = getCorrectAnswer();
-		const isCorrect = areStringsClose(value, correct, 0.95);
+		const correctArr = getCorrectAnswer()
+			.filter(Boolean)
+			.map((v) => v.toString().trim().toLowerCase());
 
-		if (isCorrect) {
+		values.forEach((val, i) => {
+			if (lockedAnswers[i]) return;
+
+			const normalized = (val ?? '').toString().trim().toLowerCase();
+
+			const matchIndex = correctArr.findIndex(
+				(c, ci) => !usedCorrect.has(ci) && areStringsClose(normalized, c, 0.95)
+			);
+
+			if (matchIndex !== -1) {
+				lockedAnswers[i] = true;
+				usedCorrect.add(matchIndex);
+			}
+		});
+
+		if (usedCorrect.size === correctArr.length) {
 			isLockedIn = true;
 
 			updateCard({
 				revealed: true,
-				userAnswer: value,
+				userAnswer: values,
 				isCorrect: true
 			});
 		}
 	}
 
 	function getCorrectAnswer() {
-		return Array.isArray(item.answer) ? item.answer[0] : item.answer;
+		return normalizeAnswer(item.answer);
 	}
 
 	function getMultipleChoiceOptions(count = 2) {
@@ -86,7 +108,8 @@
 		if (isLockedIn) return;
 
 		const correct = getCorrectAnswer();
-		const isCorrect = normalize(choice) === normalize(correct);
+
+		const isCorrect = correct.some((c) => normalize(choice) === normalize(c));
 
 		isLockedIn = true;
 		selectedChoice = choice;
@@ -122,10 +145,17 @@
 
 		const correct = getCorrectAnswer();
 
-		if (choice === correct) return 'choice-option correct';
+		const isCorrect = correct.some((c) => normalize(choice) === normalize(c));
+
+		if (isLockedIn && isCorrect) return 'choice-option correct';
 		if (choice === selectedChoice && !isCorrectChoice) return 'choice-option incorrect';
 
 		return 'choice-option';
+	}
+
+	function normalizeAnswer(answer) {
+		if (!answer) return [];
+		return Array.isArray(answer) ? answer : [answer];
 	}
 </script>
 
@@ -169,7 +199,8 @@
 						isLockedIn = true;
 
 						const correct = getCorrectAnswer();
-						const isCorrect = choice === correct;
+
+						const isCorrect = correct.some((c) => normalize(choice) === normalize(c));
 
 						updateCard({
 							revealed: true,
@@ -188,22 +219,42 @@
 			<button class="flag-btn" on:click={() => updateCard({ revealed: true })}>
 				<Fa icon={faFlag} />
 			</button>
-			<input
-				type="text"
-				class="form-control answer-box"
-				bind:value={draftAnswer}
-				on:input={(e) => {
-					if (isLockedIn) return;
+			<div>
+				<pre>{JSON.stringify(item, null, 2)}</pre>
+				{#if item.num_required}
+					{#each Array(item.num_required) as _, index}
+						<input
+							type="text"
+							class="form-control answer-box mb-2"
+							bind:value={draftAnswers[index]}
+							disabled={lockedAnswers[index]}
+							on:input={(e) => {
+								if (isLockedIn || lockedAnswers[index]) return;
 
-					draftAnswer = e.target.value;
-					checkFillAnswer(draftAnswer);
-				}}
-				on:keydown={(e) => {
-					if (e.key === 'Enter') {
-						e.target.blur();
-					}
-				}}
-			/>
+								draftAnswers[index] = e.target.value;
+								checkFillAnswer(draftAnswers);
+							}}
+						/>
+					{/each}
+				{:else}
+					<input
+						type="text"
+						class="form-control answer-box"
+						bind:value={draftAnswer}
+						on:input={(e) => {
+							if (isLockedIn) return;
+
+							draftAnswer = e.target.value;
+							checkFillAnswer(draftAnswer);
+						}}
+						on:keydown={(e) => {
+							if (e.key === 'Enter') {
+								e.target.blur();
+							}
+						}}
+					/>
+				{/if}
+			</div>
 			{#if $quiz.isPractice}
 				<button class="hint-btn" on:click={handleHint}>
 					<Fa icon={faLightbulb} />

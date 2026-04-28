@@ -42,10 +42,13 @@
 	}
 
 	function handleModeChange() {
+		const base = normalizeToArray(item.answers ?? item.answer);
+
+		// ensure we always have a usable array
+		const arr = base.length ? base : [];
+
 		switch (answerMode) {
 			case 'single': {
-				const arr = item.answers ?? normalizeToArray(item.answer);
-
 				item.answer = arr[0] ?? '';
 				delete item.answers;
 				delete item.isMultipleChoice;
@@ -55,8 +58,6 @@
 			}
 
 			case 'multiple-choice': {
-				const arr = item.answers ?? normalizeToArray(item.answer);
-
 				item.answers = arr.length ? arr : ['', ''];
 				item.answer = item.answers;
 				item.isMultipleChoice = true;
@@ -66,8 +67,6 @@
 			}
 
 			case 'multi-answer': {
-				const arr = item.answers ?? normalizeToArray(item.answer);
-
 				item.answers = arr.length ? arr : ['', ''];
 				item.answer = item.answers;
 				delete item.isMultipleChoice;
