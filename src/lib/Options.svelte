@@ -4,7 +4,6 @@
 	export let cards;
 	export let currentCardIndex;
 	export let numberOfOptions = 2;
-	export let shuffleTrigger;
 
 	const dispatch = createEventDispatcher();
 
@@ -48,7 +47,6 @@
 		drawnCards = myCards; // Update drawnCards after drawing
 	}
 
-	// Draw cards initially
 	drawCards();
 
 	function handleClick(card) {
@@ -65,15 +63,10 @@
 			});
 		}
 	}
-
-	$: if (shuffleTrigger) {
-		drawCards();
-	}
 </script>
 
 <div class="options">
 	{#if drawnCards}
-		<!-- loop through drawncards -->
 		{#each drawnCards as card}
 			<button
 				class={'card ' + (card.clicked ? (card.isCorrect ? 'green' : 'red') : '')}
@@ -83,7 +76,6 @@
 			</button>
 		{/each}
 	{:else}
-		<!-- Loading state -->
 		<p>Loading cards...</p>
 	{/if}
 </div>

@@ -4,7 +4,7 @@
 	import AudioUploader from '../Upload/AudioUploader.svelte';
 	import ImageSuggestions from '../Upload/ImageSuggestions.svelte';
 	import AnswerInput from './AnswerInput.svelte';
-	import { addToast } from '../../stores/toast';
+	import { addToast } from '../../store/toast';
 	import { uploadData, uploadQuestion, uploadAudio } from '../Upload/uploader';
 	import { QuestionType, AnswerType } from '$lib/types/enums';
 	import { Fa } from 'svelte-fa';
@@ -59,13 +59,6 @@
 
 	// Upload handlers
 	async function handleImageUpload() {
-		console.log('handleImageUpload called with item:', {
-			file: item.file,
-			src: item.src,
-			answer: item.answer,
-			answers: item.answers
-		});
-
 		if (
 			(item.answer ?? '').trim() === '' &&
 			(Array.isArray(item.answers) ? item.answers.join('').trim() : (item.answers ?? '').trim()) ===
@@ -77,6 +70,7 @@
 			});
 			return;
 		}
+
 		if (!item.src && !item.file) {
 			console.log('No image found - src:', item.src, 'file:', item.file);
 			addToast({
@@ -204,7 +198,6 @@
 			});
 			return;
 		}
-		console.log('Uploading question:', item);
 		const newItems = await uploadQuestion({
 			...item,
 			questionType: QuestionType.TEXT,
@@ -264,7 +257,7 @@
 	<div class="tab-content">
 		{#if questionType === 'Image'}
 			<!-- Image Sub-tabs -->
-			<div class="sub-tabs mb-3">
+			<div class="sub-tabs">
 				<button
 					class="sub-tab-btn {imageSubTab === 'upload' ? 'active' : ''}"
 					on:click={() => (imageSubTab = 'upload')}
@@ -279,9 +272,7 @@
 				</button>
 			</div>
 
-			<div class="form-group mt-3">
-				<AnswerInput bind:item idPrefix="answer-image" />
-			</div>
+			<AnswerInput bind:item idPrefix="answer-image" />
 
 			<form on:submit|preventDefault={handleImageUpload}>
 				<div class="row">
@@ -290,7 +281,6 @@
 							<FileUpload
 								bind:this={fileUploadComponent}
 								on:uploadImage={(event) => {
-									console.log('Upload event received:', event.detail, typeof event.detail);
 									// Handle both file uploads and URL uploads
 									if (typeof event.detail === 'string') {
 										// URL upload
@@ -303,7 +293,6 @@
 										item.file = event.detail;
 										item.src = '';
 									}
-									console.log('Item state after upload:', { file: item.file, src: item.src });
 								}}
 							/>
 						</div>
@@ -334,7 +323,6 @@
 					<div class="mt-3">
 						<AudioUploader
 							on:addSong={(e) => {
-								console.log(e);
 								item.videoId = e.detail.videoId;
 								item.title = e.detail.title;
 								item.thumbnail = e.detail.thumbnail;
@@ -349,9 +337,8 @@
 			<form on:submit|preventDefault={handleQuestionUpload}>
 				<div class="form-group">
 					<label for="question-input-question">Question:</label>
-					<input
+					<textarea
 						id="question-input-question"
-						type="text"
 						class="form-control"
 						bind:value={item.question}
 						placeholder="Enter the question"
@@ -367,7 +354,7 @@
 <style>
 	.nav-tabs {
 		border-bottom: 1px solid #e9ecef;
-		margin-bottom: 20px;
+		margin-bottom: 4px;
 		background: #f8f9fa;
 		border-radius: 8px 8px 0 0;
 		padding: 4px;
@@ -408,7 +395,6 @@
 		border: 1px solid #e9ecef;
 		border-top: none;
 		border-radius: 0 0 8px 8px;
-		padding: 24px;
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 	}
 

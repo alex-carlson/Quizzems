@@ -1,6 +1,5 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
-	import { v4 as uuidv4 } from 'uuid';
 	import Cropper from './Cropper.svelte';
 	import Drawing from './Drawing.svelte';
 	import AnswerInput from '../components/AnswerInput.svelte';
@@ -16,8 +15,9 @@
 		faPlus
 	} from '@fortawesome/free-solid-svg-icons';
 	import { uploadData, saveEdit } from './uploader.js';
-	import { addToast } from '../../stores/toast.js';
-	import { user } from '../../stores/user.js';
+	import { addToast } from '../../store/toast.js';
+	import { user } from '../../store/user.js';
+	import { json } from '@sveltejs/kit';
 	export let item;
 	export let index;
 	export let editableItemId;
@@ -206,7 +206,7 @@
 	async function addItemMetaData(videoId) {
 		try {
 			const response = await fetch(
-				`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${import.meta.env.VITE_YOUTUBE_API_KEY}`
+				`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${import.meta.env.VITE_GOOGLE_API_KEY}`
 			);
 			const data = await response.json();
 			if (data.items && data.items.length > 0) {
@@ -216,7 +216,6 @@
 					thumbnail: snippet.thumbnails?.medium?.url || '',
 					title: snippet.title || ''
 				};
-				console.log('Updated item with metadata:', updatedItem);
 				dispatch('saveEdit', updatedItem);
 			} else {
 				console.warn('No video data found for ID:', videoId);
@@ -224,6 +223,10 @@
 		} catch (err) {
 			console.error('Error fetching video data:', err);
 		}
+	}
+
+	function normalizeAnswers(answer) {
+		return Array.isArray(answer) ? answer : answer ? [answer] : [];
 	}
 
 	async function uploadChangedImage(file, fileName = null) {
@@ -251,7 +254,7 @@
 				answerType: item.answerType || AnswerType.SINGLE
 			};
 
-			console.log('Temporary item for upload with existing ID validation:', tempItem);
+			console.log('Uploading data', tempItem);
 
 			// Upload the new image with existing item ID for validation - use a new UUID but include update flags
 			const result = await uploadData(tempItem, item.id, false);
@@ -295,18 +298,18 @@
 	}
 
 	async function onCropped(event) {
-		console.log('Cropped event received:', event);
 		const croppedFile = event.detail;
 
 		//get extension from type
 		const fileExtension = croppedFile.type.split('/')[1] || 'png';
+
+		console.log('Uploading changed image with data: ', croppedFile);
 
 		await uploadChangedImage(croppedFile, 'cropped-image.' + fileExtension);
 		isCropping = false; // Reset cropping state
 	}
 
 	async function onSave(event) {
-		console.log('Drawing saved:', event);
 		const { dataURL } = event.detail;
 
 		// Convert dataURL to File object
@@ -393,11 +396,11 @@
 >
 	{#if editableItemId === item.id && item.id != null}
 		<div class="editing">
-			{#if item.image != null}
+			{#if (item.type === 'image' || item.type === 'default') && item.url}
 				{#if !isCropping && !isDrawing}
-					<img src={item.image} alt="To crop" class="border" />
+					<img src={item.url} alt="To crop" class="border" />
 					<div class="actions">
-						{#if isEditable(item.image)}
+						{#if isEditable(item.url)}
 							<button class="btn btn-image-action me-2" on:click={() => (isCropping = true)}
 								>Crop</button
 							>
@@ -408,7 +411,7 @@
 					<div class="cropper-section mb-3">
 						<Cropper
 							bind:this={cropperComponent}
-							src={item.image}
+							src={item.url}
 							on:cropped={onCropped}
 							on:cancel={onCancel}
 						/>
@@ -417,7 +420,7 @@
 					<div class="drawing-section mb-3">
 						<Drawing
 							bind:this={drawingComponent}
-							src={item.image}
+							src={item.url}
 							on:save={onSave}
 							on:cancel={onCancel}
 						/>
@@ -479,18 +482,12 @@
 		<div class="item-display d-flex gap-3 h-100">
 			<div class="content-section flex-half d-flex flex-column">
 				<div class="media-content">
-					{#if item.file || item.image || item.questionType == QuestionType.IMAGE}
-						<img class="preview" src={item.file || item.image} alt="Preview" />
+					{#if (item.type === 'image' || item.type === 'default') && item.url}
+						<img class="preview" src={item.url} alt="Preview" />
 					{:else if item.audio != null}
 						<div class="audio">
-							{#if item.thumbnail}
-								<img src={item.thumbnail} alt={item.answer} />
-								<p>{item.title || item.answer}</p>
-							{:else}
-								<button on:click={() => addItemMetaData(item.audio)}>
-									<Fa icon={faPenToSquare} />Update Data</button
-								>
-							{/if}
+							<img src={`https://img.youtube.com/vi/${item.url}/default.jpg`} alt={item.answer} />
+							<p>{item.yt_title}</p>
 						</div>
 					{:else}
 						<span class="question">{item.question}</span>
@@ -498,30 +495,29 @@
 				</div>
 				{#if item.supplemental}
 					<div class="supplemental-content">
-						<span>{@html (item.supplemental || '').replace(/\n/g, '<br>')}</span>
+						<span>{item.supplemental}</span>
 					</div>
 				{/if}
 			</div>
 			<div class="answer-section flex-half d-flex flex-column">
 				<div class="answer-display">
-					{#if item.answerType === AnswerType.SINGLE || !isValidAnswerType(item.answerType)}
+					{#if item.answer_type === AnswerType.SINGLE || !isValidAnswerType(item.answer_type)}
 						<span class="answer-text">{item.answer}</span>
-					{:else if item.answerType === AnswerType.MULTIPLE_CHOICE}
+					{:else if item.answer_type === AnswerType.MULTIPLE_CHOICE}
 						<small class="text-muted mb-2">Multiple Choice:</small>
-						{#each item.answers || [] as answer, index}
+						{#each item.answer || [] as answer, index (index)}
 							<span class="answer-option" class:correct={item.correctAnswerIndex === index}>
 								{index + 1}. {answer}
 								{#if item.correctAnswerIndex === index}✓{/if}
 							</span>
 						{/each}
 					{:else}
-						<small class="text-muted mb-2"
-							>Multi-Answer (Required: {item.numRequired ||
-								(item.answers && item.answers.length) ||
-								0}):</small
-						>
-						{#each item.answers || [] as answer, index}
-							<span class="answer-option">{index + 1}. {answer}</span>
+						<small class="text-muted mb-2">
+							Multi-Answer (Required: {item.num_required || normalizeAnswers(item.answer).length}):
+						</small>
+
+						{#each normalizeAnswers(item.answer) as a, index (index)}
+							<span class="answer-option">{index + 1}. {a}</span>
 						{/each}
 					{/if}
 				</div>
@@ -554,7 +550,7 @@
 					>
 						<Fa icon={faPenToSquare} />
 					</button>
-					<button class="btn btn-outline-danger btn-sm" on:click={() => removeItemHandler(item.id)}>
+					<button class="btn btn-outline-danger btn-sm" on:click={() => removeItemHandler()}>
 						<Fa icon={faTrashCan} />
 					</button>
 				</div>

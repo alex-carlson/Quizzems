@@ -1,4 +1,4 @@
-// src/lib/stores/socket.ts
+// src/libstore/socket.ts
 import { io, Socket } from 'socket.io-client';
 import { writable } from 'svelte/store';
 import { v4 as uuidv4 } from 'uuid';

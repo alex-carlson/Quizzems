@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { user } from '$stores/user';
+	import { user } from '$store/user';
 	import {
 		signInWithEmail,
 		signUpWithEmail,

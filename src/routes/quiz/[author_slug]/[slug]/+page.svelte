@@ -1,87 +1,74 @@
 <script>
 	import FlashCards from '$lib/FlashCards.svelte';
+	import Modal from '$lib/Modal.svelte';
+	import { slugify } from '$lib/api/utils.js';
 	import { onDestroy, onMount } from 'svelte';
 	import { incrementPlayCounter } from '$lib/api/collections.js';
 	import { fetchCollaborators } from '$lib/api/user';
 	import QuizHeader from '$lib/components/quiz/QuizHeader.svelte';
-	import { createQuizStore } from '$lib/../stores/quiz';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { user } from '$lib/../stores/user';
+	import { user } from '$store/user.js';
+	import { getScoreMessage } from '$lib/api/quizScore.js';
 	export let data;
-
-	// Debug the incoming data and route params
-	console.log('Page data received:', data);
-	console.log('Route params from page store:', $page.params);
-	console.log('Current URL:', $page.url.href);
+	import { quiz } from '$store/quiz.js';
+	import { get } from 'svelte/store';
 
 	// Destructure page data with fallbacks
 	const { category, collectionId, author, thumbnail, quizScore, timesPlayed, meta } = data || {};
 
-	console.log('Destructured values:', {
-		category,
-		collectionId,
-		author,
-		thumbnail,
-		quizScore,
-		timesPlayed
-	});
-
-	// Initialize quiz store
-	const quiz = createQuizStore();
-	$: stats = quiz.stats;
-
 	let timer = 0;
 	let interval = null;
-	let quizStarted = false;
-	let practiceMode = false;
-	let flashCardsComponent;
-	let quizStats = { correct: 0, total: 0 };
-	let imagesPreloaded = false;
-	let imagePreloadCount = 0;
-	let totalImages = 0;
-	let preloadStarted = false;
-	let loadedImages = 0;
-	let failedImages = 0;
-	let canEditCollection = false;
-	let permissionCheckKey = '';
+	let loading = true;
+	let score = 0;
+	let cards = [];
 
-	function slugify(value = '') {
-		return String(value)
-			.toLowerCase()
-			.trim()
-			.replace(/\s+/g, '-')
-			.replace(/[^a-z0-9-]/g, '');
+	$: state = $quiz;
+	$: cards = $quiz.cards;
+
+	function handleEditCollection() {
+		if (!collectionId) return;
+		goto(`/upload?collectionId=${encodeURIComponent(collectionId)}`);
+	}
+
+	function updateCards(e) {
+		// Check if all cards are revealed
+		const allRevealed = cards.every((card) => card.revealed);
+		if (allRevealed) {
+			handleQuizFinish();
+		}
 	}
 
 	async function refreshEditPermission() {
 		if (!collectionId || !$user?.id) {
-			canEditCollection = false;
-			return;
+			return false;
 		}
 
 		const currentUserName = ($user.username || '').toLowerCase();
 		const authorFromCollection = ($quiz.collection?.author || '').toLowerCase();
+
 		const authorSlugParam = $page.params?.author_slug || '';
+
 		const isAuthor =
 			(currentUserName && authorFromCollection && currentUserName === authorFromCollection) ||
 			(currentUserName && slugify(currentUserName) === authorSlugParam);
 
 		if (isAuthor) {
-			canEditCollection = true;
-			return;
+			return true;
 		}
 
 		try {
 			const collaborators = await fetchCollaborators(collectionId);
+
 			const list = Array.isArray(collaborators?.data)
 				? collaborators.data
 				: Array.isArray(collaborators)
 					? collaborators
 					: [];
 
-			canEditCollection = list.some((collab) => {
+			return list.some((collab) => {
 				const collabUsername = (collab?.username || '').toLowerCase();
+
 				return (
 					collab?.id === $user.id ||
 					collab?.public_id === $user.public_id ||
@@ -90,115 +77,24 @@
 			});
 		} catch (error) {
 			console.error('Failed to check collaborator permissions:', error);
-			canEditCollection = false;
-		}
-	}
-
-	function handleEditCollection() {
-		if (!collectionId) return;
-		goto(`/upload?collectionId=${encodeURIComponent(collectionId)}`);
-	}
-
-	// Preload images function
-	function preloadImages(cards) {
-		// Extract all unique image URLs from cards
-		const imageUrls = [
-			...new Set([
-				...cards
-					.filter((card) => card.questionType === 'image' && card.imageUrl)
-					.map((card) => card.imageUrl)
-			])
-		];
-
-		totalImages = imageUrls.length;
-		imagePreloadCount = 0;
-		loadedImages = 0;
-		failedImages = 0;
-
-		console.log(`Starting preload of ${totalImages} unique images:`, imageUrls);
-
-		if (totalImages === 0) {
-			imagesPreloaded = true;
-			return;
-		}
-
-		const preloadPromises = imageUrls.map((url, index) => {
-			return new Promise((resolve) => {
-				const img = new Image();
-				let completed = false;
-
-				const onComplete = (loaded = false) => {
-					if (completed) return; // Prevent multiple calls
-					completed = true;
-					imagePreloadCount++;
-					if (loaded) {
-						loadedImages++;
-					} else {
-						failedImages++;
-					}
-					resolve(loaded);
-				};
-
-				img.onload = () => onComplete(true);
-				img.onerror = () => onComplete(false); // Mark as failed but continue
-				img.src = url;
-				// No artificial timeout - let the browser handle loading naturally
-			});
-		});
-
-		// Wait for all images to either load or fail naturally
-		Promise.all(preloadPromises).then(() => {
-			console.log(
-				`Image preloading completed. Loaded: ${loadedImages}, Failed: ${failedImages}, Total: ${imagePreloadCount}/${totalImages}`
-			);
-			imagesPreloaded = true;
-		});
-	}
-
-	// Preload images when cards are loaded (memoized to prevent excessive checks)
-	let lastCardsHash = '';
-	$: {
-		if ($quiz.hasInitialized && $quiz.cards.length > 0 && !imagesPreloaded && !preloadStarted) {
-			// Create a hash to avoid redundant preload triggers
-			const cardsHash = `${$quiz.cards.length}-${$quiz.hasInitialized}`;
-			if (cardsHash !== lastCardsHash) {
-				lastCardsHash = cardsHash;
-				preloadStarted = true;
-				preloadImages($quiz.cards);
-			}
-		}
-	}
-
-	// Log collection data when received
-	$: {
-		console.log('Quiz state debug:', {
-			hasInitialized: $quiz.hasInitialized,
-			isLoading: $quiz.isLoading,
-			collectionExists: !!$quiz.collection,
-			collectionName: $quiz.collection?.name,
-			cardsLength: $quiz.cards?.length,
-			loadingError: $quiz.loadingError,
-			collectionIdFromProps: collectionId
-		});
-
-		if ($quiz.hasInitialized && $quiz.collection) {
-			console.log('Collection data received:', $quiz.collection);
-		}
-
-		if ($quiz.loadingError) {
-			console.error('Quiz loading error:', $quiz.loadingError);
-		}
-	}
-
-	$: {
-		const key = `${collectionId || ''}:${$user?.id || ''}:${$quiz?.collection?.author || ''}`;
-		if (key !== permissionCheckKey) {
-			permissionCheckKey = key;
-			refreshEditPermission();
+			return false;
 		}
 	}
 
 	function startQuiz(isPractice = false) {
+		quiz.setQuizStarted(true);
+		quiz.setIsPractice(isPractice);
+		quiz.setShowCategory(false);
+
+		if (state.isShuffle) {
+			// Fisher-Yates shuffle algorithm
+			for (let i = cards.length - 1; i > 0; i--) {
+				const j = Math.floor(Math.random() * (i + 1));
+				[cards[i], cards[j]] = [cards[j], cards[i]];
+			}
+		}
+
+		// Reset timer if not practice
 		if (!isPractice) {
 			timer = 0;
 			interval = setInterval(() => (timer += 1), 1000);
@@ -206,31 +102,31 @@
 			clearInterval(interval);
 		}
 
-		if (collectionId) {
+		// Increment play count for analytics
+		if (collectionId && !isPractice) {
 			incrementPlayCounter(collectionId);
 		}
-
-		quizStarted = true;
-		practiceMode = isPractice;
-
-		// Call onQuizStart on the FlashCards component
-		if (flashCardsComponent?.onQuizStart) {
-			flashCardsComponent.onQuizStart();
-		}
+		loading = false;
 	}
 
-	// Track quiz completion state
-	let quizCompleted = false;
+	function setScore() {
+		let correctAnswerCount = cards.filter((card) => card.isCorrect).length || 0;
+		let totalCount = cards.length;
+
+		return Math.round((correctAnswerCount / totalCount) * 100);
+	}
 
 	// Handle quiz finish
 	function handleQuizFinish() {
-		quizCompleted = true;
+		score = setScore();
+		quiz.setQuizCompleted(true);
+		quiz.openModal();
 		clearInterval(interval);
 	}
 
 	// Add beforeunload warning when quiz is active
 	function handleBeforeUnload(event) {
-		if (quizStarted && !quizCompleted && !practiceMode) {
+		if (state.quizStarted && !state.quizCompleted && !state.practiceMode) {
 			const message =
 				'You are in the middle of a quiz. Are you sure you want to leave? Your progress will be lost.';
 			event.preventDefault();
@@ -241,7 +137,7 @@
 
 	// Handle back button navigation
 	function handlePopState(event) {
-		if (quizStarted && !quizCompleted && !practiceMode) {
+		if (state.quizStarted && !state.quizCompleted && !state.practiceMode) {
 			const confirmed = confirm(
 				'You are in the middle of a quiz. Are you sure you want to leave? Your progress will be lost.'
 			);
@@ -251,47 +147,25 @@
 				return;
 			} else {
 				// User confirmed, allow navigation
-				quizCompleted = true;
+				state.quizCompleted = true;
 			}
 		}
 	}
 
-	// Add event listener on mount and remove on destroy
-	onMount(() => {
-		console.log('Quiz page mounted with data:', {
-			collectionId,
-			category,
-			author,
-			thumbnail,
-			status: data?.status,
-			routeParams: $page.params,
-			currentUrl: $page.url.href
-		});
-
-		// Additional validation for route params
+	onMount(async () => {
 		const { author_slug, slug } = $page.params;
+
 		if (!author_slug || !slug) {
-			console.error('Missing route parameters:', { author_slug, slug });
-			console.error('This suggests a routing/static generation issue');
+			console.error('Missing route parameters');
 		}
 
-		// Don't attempt to load collection if we have server errors
-		if (data?.status === 404 || data?.status === 500 || data?.status === 400) {
-			console.error('Server returned error status:', data.status);
-			return;
-		}
+		quiz.setCollectionId(collectionId);
+		quiz.loadCards(collectionId);
+		quiz.setQuizStarted(false);
+		quiz.setCanEditCollection(await refreshEditPermission());
 
-		if (collectionId) {
-			console.log('Attempting to load collection:', collectionId);
-			quiz.loadCollection(collectionId);
-		} else {
-			console.error('No collectionId provided to quiz page. Data was:', data);
-		}
-
-		// Add a history state to catch back button (browser only)
 		if (typeof window !== 'undefined') {
 			history.pushState(null, '', window.location.href);
-
 			window.addEventListener('beforeunload', handleBeforeUnload);
 			window.addEventListener('popstate', handlePopState);
 		}
@@ -299,14 +173,12 @@
 
 	onDestroy(() => {
 		clearInterval(interval);
-		// Cleanup quiz store
-		if (quiz?.cleanup) {
-			quiz.cleanup();
-		}
 		if (typeof window !== 'undefined') {
 			window.removeEventListener('beforeunload', handleBeforeUnload);
 			window.removeEventListener('popstate', handlePopState);
 		}
+
+		quiz.reset();
 	});
 </script>
 
@@ -352,21 +224,20 @@
 </svelte:head>
 
 <div>
-	{#if !quizStarted}
+	<Modal
+		show={state.showModal}
+		title="Quiz Completed!"
+		message={getScoreMessage(score)}
+		effect={score > 79 ? 'confetti' : 'none'}
+		onClose={() => {
+			state.showModal = false;
+		}}
+	/>
+	{#if !state.quizStarted}
 		<div class="white padding rounded m-3">
-			{#if $quiz.hasInitialized}
-				<QuizHeader
-					collectionName={$quiz.collection.name || category}
-					author={$quiz.collection.author || author}
-					authorSlug={$quiz.collection.author_slug}
-					thumbnail={$quiz.collection.thumbnail || thumbnail}
-					description={$quiz.collection.description}
-				/>
-			{:else}
-				<QuizHeader collectionName={category} {author} authorSlug="" {thumbnail} description="" />
-			{/if}
+			<QuizHeader collectionName={category} {author} authorSlug={slugify(author)} {thumbnail} />
 			{#if timesPlayed > 0}<h3 class="mb-3">Times Played: {timesPlayed}</h3>{/if}
-			{#if !$quiz.hasInitialized || data?.status === 404 || data?.status === 500 || data?.status === 400}
+			{#if !state.quizStarted && !cards}
 				{#if data?.status === 400}
 					<h2 class="mb-3">Invalid URL</h2>
 					<div class="alert alert-warning">
@@ -385,49 +256,9 @@
 					</div>
 				{:else}
 					<h2 class="mb-3">Loading quiz data...</h2>
-					{#if $quiz.isLoading}
+					{#if loading}
 						<p class="text-muted">Fetching collection data...</p>
 					{/if}
-					{#if $quiz.loadingError}
-						<div class="alert alert-danger">
-							<strong>Loading Error:</strong>
-							{$quiz.loadingError}
-							<br /><small>Collection ID: {collectionId}</small>
-						</div>
-					{/if}
-				{/if}
-			{:else if !imagesPreloaded && totalImages > 0}
-				<h2 class="mb-3">Preparing images... ({imagePreloadCount}/{totalImages})</h2>
-				<div class="progress mb-3" style="height: 12px;">
-					<div
-						class="progress-bar bg-success"
-						role="progressbar"
-						style="width: {totalImages > 0 ? (loadedImages / totalImages) * 100 : 0}%"
-						title="Successfully loaded images"
-					></div>
-					<div
-						class="progress-bar bg-warning"
-						role="progressbar"
-						style="width: {totalImages > 0 ? (failedImages / totalImages) * 100 : 0}%"
-						title="Failed to load images"
-					></div>
-				</div>
-				<p class="text-muted small mb-2">
-					{loadedImages} loaded, {failedImages} failed of {totalImages} images
-				</p>
-				<p class="text-muted small mb-3">Loading images in the background...</p>
-				<button
-					class="btn btn-outline-primary btn-sm me-2"
-					style="width: auto; padding: 0 1rem;"
-					on:click={() => {
-						imagesPreloaded = true;
-						preloadStarted = true;
-					}}>Skip Preload</button
-				>
-				{#if failedImages > 0}
-					<small class="text-muted"
-						>{failedImages} image(s) failed to load and will be skipped</small
-					>
 				{/if}
 			{:else}
 				<h2 class="mb-3">Ready to start?</h2>
@@ -450,9 +281,11 @@
 			>
 				<div style="flex:1;"></div>
 				<h2 style="margin:0; text-align:center; flex:1;">
-					{quizStats.correct}/{quizStats.total}
+					{Array.isArray(cards) ? cards.filter((c) => c.isCorrect).length : 0}/{Array.isArray(cards)
+						? cards.length
+						: 0}
 				</h2>
-				{#if !practiceMode}
+				{#if !state.practiceMode}
 					<div class="timer" style="flex:1; text-align:right; white-space:nowrap;">
 						Time: {Math.floor(timer / 60)}:{String(timer % 60).padStart(2, '0')}
 					</div>
@@ -463,19 +296,15 @@
 		</div>
 	{/if}
 
-	<div id="quiz" style="display: {quizStarted ? 'block' : 'none'}">
-		<FlashCards
-			bind:this={flashCardsComponent}
-			{practiceMode}
-			{collectionId}
-			{quiz}
-			{canEditCollection}
-			on:finish={handleQuizFinish}
-			on:giveup={handleQuizFinish}
-			on:statsUpdate={(e) => {
-				quizStats = e.detail;
-			}}
-			on:editCollection={handleEditCollection}
-		/>
+	<div id="quiz" style="display: {state.quizStarted ? 'block' : 'none'}">
+		{#if loading}
+			<div class="alert alert-info">Loading...</div>
+		{:else}
+			<FlashCards
+				on:finish={handleQuizFinish}
+				on:giveup={handleQuizFinish}
+				on:editCollection={handleEditCollection}
+			/>
+		{/if}
 	</div>
 </div>

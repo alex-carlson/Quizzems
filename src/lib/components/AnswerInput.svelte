@@ -21,37 +21,63 @@
 		}
 	}
 
-	// Handle answer mode change
+	// Defensive: ensure item.answers is always an array in MC/multi mode
+	$: if (
+		(answerMode === 'multiple-choice' || answerMode === 'multi-answer') &&
+		!Array.isArray(item.answers)
+	) {
+		item.answers = [item.answer || '', ''];
+	}
+
+	function normalizeToArray(answer) {
+		if (Array.isArray(answer)) {
+			return answer.map((a) => String(a).trim()).filter(Boolean);
+		}
+
+		if (typeof answer === 'string') {
+			return answer.trim() ? [answer.trim()] : [];
+		}
+
+		return [];
+	}
+
 	function handleModeChange() {
+		const base = normalizeToArray(item.answers ?? item.answer);
+
+		// ensure we always have a usable array
+		const arr = base.length ? base : [];
+
 		switch (answerMode) {
-			case 'single':
-				// Convert to single answer
-				item.answer = item.answers ? item.answers[0] : item.answer || '';
+			case 'single': {
+				item.answer = arr[0] ?? '';
 				delete item.answers;
 				delete item.isMultipleChoice;
 				delete item.numRequired;
 				item.answerType = AnswerType.SINGLE;
 				break;
-			case 'multiple-choice':
-				// Convert to multiple choice (one correct answer from multiple options)
-				if (!item.answers) {
-					item.answers = [item.answer || '', ''];
-				}
+			}
+
+			case 'multiple-choice': {
+				item.answers = arr.length ? arr : ['', ''];
+				item.answer = item.answers;
 				item.isMultipleChoice = true;
 				item.numRequired = 1;
 				item.answerType = AnswerType.MULTIPLE_CHOICE;
 				break;
-			case 'multi-answer':
-				// Convert to multi-answer (multiple correct answers)
-				if (!item.answers) {
-					item.answers = [item.answer || '', ''];
-				}
+			}
+
+			case 'multi-answer': {
+				item.answers = arr.length ? arr : ['', ''];
+				item.answer = item.answers;
 				delete item.isMultipleChoice;
+
 				if (!item.numRequired) {
 					item.numRequired = item.answers.length;
 				}
+
 				item.answerType = AnswerType.MULTI_ANSWER;
 				break;
+			}
 		}
 	}
 
@@ -227,10 +253,6 @@
 		display: flex;
 		align-items: flex-start;
 		gap: 8px;
-	}
-
-	.form-group {
-		margin-bottom: 20px;
 	}
 
 	.form-group label {

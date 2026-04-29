@@ -1,6 +1,6 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
-	import { addToast } from '../../stores/toast';
+	import { addToast } from '../../store/toast';
 	import { Fa } from 'svelte-fa';
 	import { faSearch } from '@fortawesome/free-solid-svg-icons';
 	const dispatch = createEventDispatcher();
@@ -70,10 +70,8 @@
 		}
 
 		try {
-			console.log('Making API call to:', url);
 			const res = await fetch(url);
 			const data = await res.json();
-			console.log('API response received:', data);
 
 			if (data.error && data.error.errors && data.error.errors[0].reason === 'dailyLimitExceeded') {
 				addToast({
@@ -242,10 +240,6 @@
 </div>
 
 <style>
-	.suggestions {
-		margin-top: 1rem;
-	}
-
 	.search-controls {
 		display: flex;
 		flex-direction: column;

@@ -1,7 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
-	import { socket, disconnectSocket } from '$stores/socket.js';
-	import { user } from '$stores/user.js';
+	import { socket, disconnectSocket } from '$store/socket.js';
+	import { user } from '$store/user.js';
 	import { page } from '$app/stores';
 	import { get } from 'svelte/store';
 	import FlashCards from '$lib/FlashCards.svelte';
@@ -9,7 +9,7 @@
 	import RandomItems from '$lib/RandomItems.svelte';
 	import ProfilePicture from '$lib/ProfilePicture.svelte';
 	import { faFlag } from '@fortawesome/free-solid-svg-icons';
-	import { addToast } from '$stores/toast.js';
+	import { addToast } from '$store/toast.js';
 	import Fa from 'svelte-fa';
 	import Beer from '$lib/components/Beer.svelte';
 	import { fetchCollectionById } from '$lib/api/collections';

@@ -1,14 +1,12 @@
 <script>
-	import { user, setUserBio } from '$stores/user';
+	import { user, setUserBio } from '$store/user';
 	import { getSession } from '$lib/api/supabaseClient';
 	import { updateUsername, updateEmail } from '$lib/api/auth';
-	import { toggleCache, CACHE_ENABLED } from '$stores/data';
 	import { get } from 'svelte/store';
 
 	let message = '';
 	let file = null;
 	let userId = null;
-	let cacheEnabled = CACHE_ENABLED;
 
 	// Track original values to detect changes
 	let originalEmail = '';
@@ -82,7 +80,6 @@
 	async function uploadProfilePicture(file) {
 		const headers = await getAuthHeaders();
 		if (file) {
-			console.log('File selected:', file);
 			const jpgBlob = await convertImageToJPG(file[0]);
 
 			const formData = new FormData();
@@ -188,11 +185,6 @@
 		} else {
 			message = `Some updates failed: ${errors.join(', ')}`;
 		}
-	}
-
-	function handleCacheToggle() {
-		cacheEnabled = toggleCache(cacheEnabled);
-		message = `Cache ${cacheEnabled ? 'enabled' : 'disabled'}`;
 	}
 </script>
 

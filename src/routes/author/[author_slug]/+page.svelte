@@ -19,7 +19,10 @@
 		console.log('Navigating to collection:', collection);
 
 		//use goto navigation
-		goto(`/quiz/${collection.profiles.username_slug || collection.profiles.username || collection.profiles.public_id}/${collection.slug}`, { state: { collectionId: collection.id } });
+		goto(
+			`/quiz/${collection.profiles.username_slug || collection.profiles.username || collection.profiles.public_id}/${collection.slug}`,
+			{ state: { collectionId: collection.id } }
+		);
 	}
 
 	// Use server-loaded data if available, otherwise fetch client-side

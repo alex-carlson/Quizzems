@@ -1,70 +1,72 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import Fa from 'svelte-fa';
-	import {
-		faPlayCircle,
-		faPauseCircle,
-		faDownload,
-		faSpinner
-	} from '@fortawesome/free-solid-svg-icons';
-	import { youtubePlayerService } from './api/youtubePlayer.js';
-	import { addToast } from '../stores/toast.js';
+	import { faPlayCircle, faPauseCircle, faSpinner } from '@fortawesome/free-solid-svg-icons';
+	import { youtubePlayerService } from './api/youtubePlayerService.js';
+	import { addToast } from '../store/toast.js';
+
+	export let id;
 	export let videoId;
-	// export let id; // Commented out as it's unused
+
+	let playerEl;
+
 	let isPlaying = false;
 	let playerReady = false;
-	let isMuted = false;
 	let isLoading = false;
 	let duration = 0;
 	let currentTime = 0;
 	let progress = 0;
 	let isCurrentVideo = false;
 	let unsubscribe;
-	let hasUserInteracted = false;
 	let error = null;
 
-	// Check if user is on Firefox
 	const isFirefox =
 		typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('firefox');
-	async function handleButtonClick() {
-		console.log('Button clicked for video:', videoId, 'Firefox:', isFirefox);
 
-		// Handle first user interaction for mobile and Firefox
-		if (!hasUserInteracted || isFirefox) {
-			console.log('First user interaction detected or Firefox - triggering audio unlock');
-			await youtubePlayerService.handleUserInteraction();
-			hasUserInteracted = true;
-		}
-
+	export async function play() {
 		try {
-			// If this video isn't loaded yet or has an error, try to load it
+			await youtubePlayerService.togglePlay(videoId, playerEl, id);
+		} catch (err) {
+			addToast({
+				type: 'error',
+				message: `Failed to play video: ${err.message || 'Unknown error'}`
+			});
+		}
+	}
+
+	export async function stop() {
+		try {
+			await youtubePlayerService.pause();
+		} catch (err) {
+			addToast({
+				type: 'error',
+				message: `Failed to play video: ${err.message || 'Unknown error'}`
+			});
+		}
+	}
+
+	async function handleButtonClick() {
+		try {
 			if (!isCurrentVideo || error) {
-				// Clear any existing error before attempting to load
 				if (error) {
-					youtubePlayerService.clearError();
+					youtubePlayerService.clearError?.();
 				}
-				console.log('Loading video:', videoId);
-				await youtubePlayerService.loadVideoOnly(videoId);
+
+				await youtubePlayerService.togglePlay(videoId, playerEl, id);
 			} else {
-				// If loaded, toggle play/pause
-				console.log('Toggling play/pause for video:', videoId, 'isPlaying:', isPlaying);
-				await youtubePlayerService.togglePlay(videoId);
+				await youtubePlayerService.togglePlay(videoId, playerEl, id);
 			}
 		} catch (error) {
-			console.error('Error in handleButtonClick:', error);
 			addToast({
 				type: 'error',
 				message: `Failed to play video: ${error.message || 'Unknown error'}`
 			});
 		}
 	}
-	function toggleMute() {
-		youtubePlayerService.toggleMute();
-	}
+
 	function seek(e) {
 		if (!isCurrentVideo || !playerReady) return;
 
-		// Get the progress bar element (might be clicked on child element)
 		let progressBar = e.target;
 		if (!progressBar.classList.contains('progress-bar-container')) {
 			progressBar = progressBar.closest('.progress-bar-container');
@@ -74,9 +76,8 @@
 
 		const rect = progressBar.getBoundingClientRect();
 		const x = e.clientX - rect.left;
-		const percent = Math.max(0, Math.min(100, (x / rect.width) * 100)); // Convert to 0-100 range and clamp
+		const percent = Math.max(0, Math.min(100, (x / rect.width) * 100));
 
-		console.log('Seeking to:', percent.toFixed(1) + '%', 'at position:', x, 'of', rect.width);
 		youtubePlayerService.seek(percent);
 	}
 
@@ -87,27 +88,25 @@
 
 		switch (e.key) {
 			case 'ArrowLeft':
-				newPercent = Math.max(0, newPercent - 5); // Seek back 5%
+				newPercent = Math.max(0, newPercent - 5);
 				break;
 			case 'ArrowRight':
-				newPercent = Math.min(100, newPercent + 5); // Seek forward 5%
+				newPercent = Math.min(100, newPercent + 5);
 				break;
 			case 'Home':
-				newPercent = 0; // Seek to beginning
+				newPercent = 0;
 				break;
 			case 'End':
-				newPercent = 100; // Seek to end
+				newPercent = 100;
 				break;
 			case 'Enter':
 			case ' ':
-				// Space or Enter - treat as click at current position
 				seek(e);
 				return;
 			default:
-				return; // Don't prevent default for other keys
+				return;
 		}
 		e.preventDefault();
-		console.log('Keyboard seeking to:', newPercent.toFixed(1) + '%');
 		youtubePlayerService.seek(newPercent);
 	}
 
@@ -119,43 +118,33 @@
 			.padStart(2, '0');
 		return `${m}:${s}`;
 	}
+
 	onMount(async () => {
-		// Subscribe to player state changes first
 		unsubscribe = youtubePlayerService.subscribe((state) => {
 			playerReady = state.playerReady;
-			isMuted = state.isMuted;
 			isLoading = state.isLoading;
+			isPlaying = state.isPlaying;
+			isCurrentVideo = state.currentVideoId === videoId && state.currentInstanceId === id;
 			error = state.error;
-			isCurrentVideo = state.currentVideoId === videoId;
 
 			if (isCurrentVideo) {
-				isPlaying = state.isPlaying;
-				duration = state.duration;
 				currentTime = state.currentTime;
 				progress = state.progress;
-			} else {
-				isPlaying = false;
+				duration = state.duration;
 			}
 		});
 
-		// Initialize the shared player (this will be a no-op if already initialized)
-		try {
-			await youtubePlayerService.initializePlayer();
-		} catch (error) {
-			console.error('Failed to initialize YouTube player:', error);
-			addToast({
-				type: 'error',
-				message: `Failed to initialize player: ${error.message || 'Unknown error'}`
-			});
+		if (typeof window !== 'undefined') {
+			await youtubePlayerService.initializeAPI();
 		}
 	});
 
 	onDestroy(() => {
-		if (unsubscribe) {
-			unsubscribe();
-		}
+		unsubscribe?.();
 	});
 </script>
+
+<div bind:this={playerEl} style="display: none;"></div>
 
 <div class="player-container p-3">
 	{#if !playerReady}
@@ -182,6 +171,7 @@
 					<Fa icon={faPlayCircle} />
 				{/if}
 			</button>
+
 			<div
 				class="progress-bar-container"
 				on:click={seek}
@@ -191,20 +181,23 @@
 				aria-valuemin="0"
 				aria-valuemax="100"
 				aria-valuenow={isCurrentVideo ? Math.round(progress) : 0}
-				aria-label="Video progress - use arrow keys to seek, Enter to play/pause"
+				aria-label="Video progress"
 			>
 				<div class="progress-bar-bg">
 					<div class="progress-bar-fill" style="width: {isCurrentVideo ? progress : 0}%"></div>
 				</div>
 			</div>
 		</div>
+
 		{#if error && isCurrentVideo}
 			<div class="error-message" style="color: #dc3545; font-size: 0.875rem; margin-top: 0.5rem;">
 				{error}
 			</div>
 		{/if}
+
 		<span class="progress-time">
-			{formatTime(isCurrentVideo ? currentTime : 0)} / {formatTime(isCurrentVideo ? duration : 0)}
+			{formatTime(isCurrentVideo ? currentTime : 0)} /
+			{formatTime(isCurrentVideo ? duration : 0)}
 		</span>
 	{/if}
 </div>

@@ -4,7 +4,7 @@
 	import Footer from '$lib/Footer.svelte';
 	import Toasts from '$lib/components/Toasts.svelte';
 	import { onDestroy } from 'svelte';
-	import { cleanupAuthSubscriptions } from '$stores/user';
+	import { cleanupAuthSubscriptions } from '$store/user';
 
 	export let data;
 

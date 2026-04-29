@@ -1,4 +1,4 @@
-import { user } from '$stores/user';
+import { user } from '$store/user';
 
 if (typeof localStorage !== 'undefined') {
     const storedUser = localStorage.getItem('user');

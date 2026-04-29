@@ -1,5 +1,9 @@
 <script>
-	export let collectionName, author, authorSlug, thumbnail, description;
+	export let collectionName,
+		author,
+		authorSlug = '',
+		thumbnail,
+		description = '';
 </script>
 
 <div class="headline my-3">

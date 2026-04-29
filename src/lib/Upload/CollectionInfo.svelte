@@ -3,11 +3,11 @@
 	import FileUpload from '$lib/Upload/FileUpload.svelte';
 	import Cropper from '$lib/Upload/Cropper.svelte';
 	import { uploadThumbnail } from '$lib/Upload/uploader';
-	import { addToast } from '../../stores/toast';
+	import { addToast } from '../../store/toast';
 	import { apiFetch } from '$lib/api/fetchdata';
 	import { onMount } from 'svelte';
 	import { fetchCollaborators } from '$lib/api/user';
-	import { user } from '$stores/user';
+	import { user } from '$store/user';
 	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
 
@@ -20,7 +20,7 @@
 	export let tempTags = '';
 	export let suggestedTags = [];
 	export let isPublic = false;
-	export let isShuffle = false;
+	export let isShuffle = true;
 	export let showCropper = false;
 
 	const dispatch = createEventDispatcher();
@@ -54,8 +54,6 @@
 				file: file,
 				category: collection?.category
 			};
-
-			console.log('Temporary item for upload:', tempItem);
 
 			// Upload the new image
 			const result = await uploadThumbnail(file, collection.category);
@@ -170,9 +168,6 @@
 					addToast({ type: 'success', message: `${user.username} added as collaborator.` });
 				} else {
 					addToast({ type: 'error', message: `Failed to add collaborator.` });
-					if (result) {
-						console.log(result);
-					}
 				}
 			} catch (error) {
 				addToast({ type: 'error', message: `Server error adding collaborator.` });
@@ -206,9 +201,6 @@
 					addToast({ type: 'success', message: `${user.username} removed as collaborator.` });
 				} else {
 					addToast({ type: 'error', message: `Failed to remove collaborator.` });
-					if (result) {
-						console.log(result);
-					}
 				}
 			} catch (error) {
 				addToast({ type: 'error', message: `Server error removing collaborator.` });
@@ -225,7 +217,6 @@
 			try {
 				const result = await fetchCollaborators(collection.id);
 				tempCollaborators = Array.isArray(result.data) ? result.data : [];
-				console.log('Collaborators: ', tempCollaborators);
 			} catch (error) {
 				tempCollaborators = [];
 				addToast({ type: 'error', message: 'Failed to load collaborators.' });
@@ -284,7 +275,6 @@
 									try {
 										const result = await uploadThumbnail(event.detail, collection.category);
 										if (result) {
-											console.log('Thumbnail upload successful:', result);
 											// Clear the image after successful upload
 											if (thumbnailUploader && typeof thumbnailUploader.clearImage === 'function') {
 												thumbnailUploader.clearImage();

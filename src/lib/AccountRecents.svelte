@@ -1,6 +1,6 @@
 <script>
 	import Collections from '../Collections.svelte';
-	import { user } from '../../stores/user';
+	import { user } from '../store/user';
 	import { getSession } from '../supabaseClient';
 
 	let collections = [];

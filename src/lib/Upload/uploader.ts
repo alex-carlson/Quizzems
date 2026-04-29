@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import { apiFetch } from '$lib/api/fetchdata';
 import { get } from 'svelte/store';
-import { user } from '$stores/user';
-import { addToast } from '$stores/toast';
+import { user } from '$store/user';
+import { addToast } from '$store/toast';
 
 // Helper function to safely get current user
 function getCurrentUser() {
@@ -74,7 +74,7 @@ export async function createCollection(category) {
 // Remove item
 export async function removeItem(itemId, category) {
     try {
-        const result = await apiFetch('/items/remove', 'POST', {
+        const result = await apiFetch('/items/delete', 'DELETE', {
             category,
             itemId
         });
@@ -86,10 +86,8 @@ export async function removeItem(itemId, category) {
 }
 
 export async function saveEdit(data) {
-    console.log('Saving edit for item:', data);
     try {
         const result = await apiFetch('/items/edit', 'POST', data);
-        console.log('Edit result:', result);
         addToast({
             message: 'Item edited successfully!',
             type: 'success',
@@ -109,7 +107,6 @@ export async function saveEdit(data) {
 
 // Reorder items
 export async function reorderItems(prevIndex, newIndex, data) {
-    console.log('Reordering items:', { prevIndex, newIndex, data });
     try {
         const currentUser = getCurrentUser();
         const items = [...data.items];
@@ -155,14 +152,6 @@ export function confirmDelete(id, onSuccess = () => { }) {
 export async function uploadData(item, uuid = uuidv4(), forceJpg = false) {
     const usr = getCurrentUser();
 
-    console.log('Upload data called with item:', {
-        file: item.file,
-        answer: item.answer,
-        answers: item.answers,
-        type: typeof item.file,
-        hasFile: !!item.file
-    });
-
     // If file is a URL (string), call /upload-url
     if (typeof item.file === 'string') {
         return handleUpload(async () => {
@@ -180,17 +169,12 @@ export async function uploadData(item, uuid = uuidv4(), forceJpg = false) {
                 questionType: item.questionType,
                 answerType: item.answerType,
                 category: item.category,
-                // Add existing item ID for server validation during updates
                 existingItemId: item.existingItemId,
-                // Add update flag to indicate this is an update operation  
                 isUpdate: item.isUpdate,
             }, usr, item.category);
             return await apiFetch('/items/upload-url', 'POST', data);
         }, 'Error uploading URL data', undefined);
     }
-
-    // Otherwise, upload as file
-    console.log('Taking file upload path, file:', item.file);
 
     // Validate that file is actually a File or Blob object
     if (!item.file || (typeof item.file !== 'object') || !(item.file instanceof File || item.file instanceof Blob)) {
@@ -203,7 +187,6 @@ export async function uploadData(item, uuid = uuidv4(), forceJpg = false) {
         formData.append('id', item.id || uuid);
         formData.append('uuid', uuid);
         formData.append('file', item.file);
-        console.log('Added file to FormData:', item.file);
         formData.append('forceJpeg', forceJpg.toString());
         formData.append('answer', item.answer || '');
         addUserAuthToFormData(formData, usr, item.category);
@@ -266,20 +249,18 @@ export async function uploadAudio(item) {
         formData.append('thumbnail', item.thumbnail);
         formData.append('url', item.videoId);
 
-        console.log('Uploading audio data:', formData);
         return await apiFetch('/items/add-audio', 'POST', formData as never, true);
     }, 'Error uploading audio data', undefined);
 }
 
 export async function uploadQuestion(data) {
     const usr = getCurrentUser();
-    console.log("Upload question, data is:", data);
 
     return handleUpload(async () => {
         const questionData = addUserAuthToData({
             uuid: uuidv4(),
             question: data.question,
-            answer: data.answer ?? data.answers,
+            answer: data.answers ?? data.answer,
             category: data.category,
             type: data.type,
             questionType: data.questionType || 'text',
@@ -290,7 +271,6 @@ export async function uploadQuestion(data) {
             questionData.numRequired = data.numRequired;
         }
 
-        console.log('Uploading question data:', questionData);
         return await apiFetch('/items/add-question', 'POST', questionData);
     }, 'Error uploading question data', undefined);
 }

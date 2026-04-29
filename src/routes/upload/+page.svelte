@@ -1,5 +1,5 @@
 <script>
-	import { user } from '$stores/user';
+	import { user } from '$store/user';
 	import Collections from '$lib/Collections.svelte';
 	import CollectionItem from '$lib/Upload/CollectionItem.svelte';
 	import CollectionInfo from '$lib/Upload/CollectionInfo.svelte';
@@ -14,7 +14,8 @@
 	} from '$lib/Upload/uploader';
 	import { supabase } from '$lib/api/supabaseClient';
 	import { apiFetch } from '$lib/api/fetchdata';
-	import { addToast } from '../../stores/toast';
+	import { addToast } from '../../store/toast';
+	import { fetchCollectionItems } from '$lib/api/items';
 	import QuestionTypeForm from '$lib/components/QuestionTypeForm.svelte';
 	import { page } from '$app/stores';
 	import { Fa } from 'svelte-fa';
@@ -27,6 +28,7 @@
 	let collections = [];
 	let showCropper = false;
 	let item = {};
+	let items = [];
 	let tempCategory = '';
 	let tempDescription = '';
 	let tempTags = '';
@@ -168,6 +170,8 @@
 				} else {
 					collection.itemsLength = 0;
 				}
+
+				collection.items = await fetchCollectionItems(collection.id, true);
 			} else {
 				console.error('No collection data received');
 				addToast({
@@ -234,7 +238,7 @@
 	<title>Manage Collections</title>
 </svelte:head>
 
-<div class="form white uploader py-4 col-12 col-md-10 col-lg-8 mx-auto">
+<div class="form white uploader py-4 px-2 col-12 col-md-10 col-lg-8 mx-auto">
 	{#if !$user}
 		<div class="text-center py-5">
 			<p class="mb-3">
@@ -257,42 +261,40 @@
 		</div>
 
 		{#if collection === null}
-			<div class="create-section mb-5">
-				<div class="card p-4">
-					<h2 class="mb-4">Create a new Quiz</h2>
-					<div class="mb-3">
-						<input
-							type="text"
-							class="form-control"
-							bind:value={tempCategory}
-							placeholder="Category Name"
-						/>
-					</div>
-					<button
-						class="btn btn-primary"
-						on:click={async () => {
-							const result = await createCollection(tempCategory);
-							if (result) {
-								await loadCollections();
-								// Handle both array and single object responses
-								const newCol = Array.isArray(result) ? result[0] : result;
-								if (newCol && newCol.id) {
-									// Find the collection in the loaded collections or use the returned data
-									collection = collections.find((c) => c.id === newCol.id) || newCol;
-									setCollection(newCol.id);
-								} else {
-									console.error('Invalid collection response:', result);
-									addToast({
-										type: 'error',
-										message: 'Collection created but failed to load. Please refresh the page.'
-									});
-								}
-							}
-						}}
-					>
-						Create
-					</button>
+			<div class="create-section">
+				<h2 class="mb-4">Create a new Quiz</h2>
+				<div class="mb-3">
+					<input
+						type="text"
+						class="form-control"
+						bind:value={tempCategory}
+						placeholder="Category Name"
+					/>
 				</div>
+				<button
+					class="btn btn-primary"
+					on:click={async () => {
+						const result = await createCollection(tempCategory);
+						if (result) {
+							await loadCollections();
+							// Handle both array and single object responses
+							const newCol = Array.isArray(result) ? result[0] : result;
+							if (newCol && newCol.id) {
+								// Find the collection in the loaded collections or use the returned data
+								collection = collections.find((c) => c.id === newCol.id) || newCol;
+								setCollection(newCol.id);
+							} else {
+								console.error('Invalid collection response:', result);
+								addToast({
+									type: 'error',
+									message: 'Collection created but failed to load. Please refresh the page.'
+								});
+							}
+						}
+					}}
+				>
+					Create
+				</button>
 			</div>
 		{:else}
 			<CollectionInfo
@@ -332,19 +334,16 @@
 										on:removeItem={async () => {
 											const updatedItems = await removeItem(item.id, collection.category);
 											if (updatedItems) {
-												console.log('updatedItems:', updatedItems);
 												collection.items = updatedItems.items;
 												collection.itemsLength = updatedItems.items.length;
 											}
 										}}
 										on:saveEdit={async (e) => {
-											console.log('Save edit event:', e.detail);
 											const d = {
 												collection: collection.category,
 												author_id: $user.public_id,
 												...e.detail
 											};
-											console.log('Data to save:', d);
 											const result = await saveEdit(d);
 											if (result) {
 												collections = result;
@@ -402,7 +401,6 @@
 							{collection}
 							{questionType}
 							on:itemAdded={(e) => {
-								console.log('Item added event received:', e.detail);
 								// Update the collection with new items
 								collection.items = e.detail.items;
 								collection.itemsLength = e.detail.itemsLength;

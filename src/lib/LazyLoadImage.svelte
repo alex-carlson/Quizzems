@@ -1,6 +1,5 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
-	import { addToast } from '../stores/toast';
 
 	const dispatch = createEventDispatcher();
 
@@ -84,7 +83,7 @@
 			{alt}
 			{width}
 			{height}
-			loading={priority ? 'eager' : loading}
+			loading="eager"
 			on:load={handleLoad}
 			on:error={handleError}
 			style="width:100%;height:100%;object-fit:{objectFit};"

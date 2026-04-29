@@ -1,5 +1,5 @@
 <script>
-	import { user, updateProfilePictureUrl } from '../stores/user';
+	import { user, updateProfilePictureUrl } from '../store/user';
 
 	export let userId;
 	export let isRound = true;

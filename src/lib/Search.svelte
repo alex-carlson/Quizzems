@@ -3,7 +3,7 @@
 	import Fa from 'svelte-fa';
 	import { createEventDispatcher } from 'svelte';
 	import { browser } from '$app/environment';
-	import { addToast } from '../stores/toast';
+	import { addToast } from '../store/toast';
 	let searchTerm = '';
 	let searchResults = [];
 	const dispatch = createEventDispatcher();
@@ -32,7 +32,6 @@
 
 			const data = await response.json();
 			searchResults = data;
-			console.log('Search results:', searchResults);
 		} catch (error) {
 			console.error('Error fetching search results:', error);
 			addToast({

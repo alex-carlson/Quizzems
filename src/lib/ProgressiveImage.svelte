@@ -3,7 +3,7 @@
 	export let tempSize = '';
 	export let priority = false; // For above-the-fold images
 
-	import { addToast } from '../stores/toast';
+	import { addToast } from '../store/toast';
 
 	let loaded = false;
 	let thumbnailLoaded = false;

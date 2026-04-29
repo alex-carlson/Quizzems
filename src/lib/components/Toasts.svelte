@@ -1,5 +1,5 @@
 <script>
-	import { toasts, removeToast } from '$stores/toast';
+	import { toasts, removeToast } from '$store/toast';
 
 	export let position = 'top-center'; // You can add variants
 </script>

@@ -1,5 +1,5 @@
 <script>
-	import { user } from '$stores/user';
+	import { user } from '../store/user';
 	import UserNav from './UserNav.svelte';
 	import Fa from 'svelte-fa';
 	import {
@@ -17,7 +17,7 @@
 	const navLinks = [
 		{ href: '/', label: 'Home', path: '/', icon: faHome, alt: 'Home' },
 		{ href: '/about', label: 'About', path: '/about', icon: faInfoCircle, alt: 'About' },
-		{ href: '/party', label: 'Party', path: '/party', icon: faUsers, alt: 'Party' },
+		// { href: '/party', label: 'Party', path: '/party', icon: faUsers, alt: 'Party' },
 		{
 			href: '/leaderboard',
 			label: 'Leaderboard',
