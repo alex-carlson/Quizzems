@@ -11,15 +11,11 @@
 
 	const dispatch = createEventDispatcher();
 
-	// 👇 derive everything from store
-	$: state = $quiz;
 	$: cards = $quiz.cards || [];
 	$: practiceMode = $quiz.isPractice;
 	$: isGrid = $quiz.isGrid;
-	$: isFullscreen = $quiz.isFullscreen;
 	$: currentMode = $quiz.currentMode;
 
-	let isCompletingQuiz = false;
 	let isProcessingAnswer = false;
 	let answerProcessingTimeout;
 	let cardRefs = [];
@@ -33,71 +29,38 @@
 		quiz.setCards(updated);
 	}
 
-	function shuffleCards() {
-		const shuffled = [...$quiz.cards];
-
-		for (let i = shuffled.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
-			[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-		}
-
-		quiz.setCards(shuffled);
-		dispatch('shuffle', { cards: shuffled });
-	}
-
-	function toggleReveal(index) {
-		const updated = [...$quiz.cards];
-		const card = updated[index];
-
-		const wasRevealed = card.revealed;
-		card.revealed = !wasRevealed;
-
-		if (!wasRevealed) {
-			const nextIndex = updated.findIndex((c, i) => i > index && !c.revealed);
-		}
-
-		quiz.setCards(updated);
-	}
-
-	function setMode(mode) {
-		quiz.setMode(mode);
-	}
-
 	function onCorrectAnswer(event) {
-		if (isProcessingAnswer) return;
-		isProcessingAnswer = true;
+		// if (isProcessingAnswer) return;
+		// isProcessingAnswer = true;
 
 		const { index, answer, userAnswer, isCorrect } = event.detail;
 
 		const updated = [...$quiz.cards];
-		updated[index] = {
-			...updated[index],
-			revealed: true,
-			userAnswer: userAnswer || answer,
-			isCorrect
-		};
+		// updated[index] = {
+		// 	...updated[index],
+		// 	revealed: true,
+		// 	userAnswer: userAnswer || answer,
+		// 	isCorrect
+		// };
 
-		quiz.setCards(updated);
+		// quiz.setCards(updated);
+
+		// console.log('On correct answer event triggered');
 
 		const nextIndex = updated.findIndex((c, i) => i > index && !c.revealed);
 
-		if (answerProcessingTimeout) clearTimeout(answerProcessingTimeout);
-		answerProcessingTimeout = setTimeout(() => (isProcessingAnswer = false), 150);
+		// if (answerProcessingTimeout) clearTimeout(answerProcessingTimeout);
+		// answerProcessingTimeout = setTimeout(() => (isProcessingAnswer = false), 150);
 
-		tick().then(() => {
-			if (nextIndex !== -1) {
-				scrollToCard(nextIndex);
-			}
-		});
+		if (nextIndex !== -1 && cardRefs[nextIndex]) {
+			cardRefs[index]?.stop?.();
+			cardRefs[nextIndex]?.playAudio?.();
+		}
 
-		setTimeout(() => dispatch('correctAnswer', event.detail), 0);
+		// setTimeout(() => dispatch('correctAnswer', event.detail), 0);
 	}
 
-	function scrollToCard(index) {
-		cardRefs[index]?.scrollTo?.();
-	}
-
-	function getStats() {
+	function getStats(cards) {
 		const total = cards.length;
 		const answered = cards.filter((c) => c.revealed).length;
 		const correct = cards.filter((c) => c.isCorrect).length;
@@ -107,8 +70,7 @@
 		return { total, answered, correct, percentage, isComplete };
 	}
 
-	// auto-finish
-	$: stats = getStats();
+	$: stats = getStats(cards);
 	$: if (stats.isComplete && !showModal) {
 		dispatch('finish');
 	}

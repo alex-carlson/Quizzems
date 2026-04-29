@@ -18,8 +18,6 @@
 			const cards = Array.isArray(result) ? result : result?.data || [];
 
 			quiz.setCards(cards);
-
-			// optional: if you want to reset quiz state per fetch
 			quiz.setQuizStarted(false);
 			quiz.setQuizCompleted(false);
 			quiz.setShowCategory(true);
@@ -33,7 +31,6 @@
 
 	onMount(() => {
 		document.title = 'Potpourri';
-		getRandomItems();
 	});
 </script>
 
@@ -43,16 +40,7 @@
 	<span>
 		<label for="count">How many? (1-200): </label>
 
-		<input
-			type="number"
-			name="count"
-			id="count"
-			min="1"
-			max="200"
-			bind:value={count}
-			on:change={getRandomItems}
-		/>
-
+		<input type="number" name="count" id="count" min="1" max="200" bind:value={count} />
 		<button on:click={getRandomItems} disabled={loading}> Get Random </button>
 	</span>
 </div>
@@ -82,7 +70,7 @@
 		</div>
 	{:else if error}
 		<p class="error">{error}</p>
-	{:else}
+	{:else if $quiz.cards.length > 0}
 		<FlashCards />
 	{/if}
 </div>

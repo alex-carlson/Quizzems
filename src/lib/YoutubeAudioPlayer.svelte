@@ -1,23 +1,17 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import Fa from 'svelte-fa';
-	import {
-		faPlayCircle,
-		faPauseCircle,
-		faDownload,
-		faSpinner
-	} from '@fortawesome/free-solid-svg-icons';
+	import { faPlayCircle, faPauseCircle, faSpinner } from '@fortawesome/free-solid-svg-icons';
 	import { youtubePlayerService } from './api/youtubePlayerService.js';
 	import { addToast } from '../store/toast.js';
 
 	export let id;
 	export let videoId;
 
-	let playerEl; // ✅ NEW
+	let playerEl;
 
 	let isPlaying = false;
 	let playerReady = false;
-	let isMuted = false;
 	let isLoading = false;
 	let duration = 0;
 	let currentTime = 0;
@@ -29,23 +23,40 @@
 	const isFirefox =
 		typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('firefox');
 
-	async function handleButtonClick() {
-		console.log('Button clicked for video:', videoId, 'Firefox:', isFirefox);
+	export async function play() {
+		try {
+			await youtubePlayerService.togglePlay(videoId, playerEl, id);
+		} catch (err) {
+			addToast({
+				type: 'error',
+				message: `Failed to play video: ${err.message || 'Unknown error'}`
+			});
+		}
+	}
 
+	export async function stop() {
+		try {
+			await youtubePlayerService.pause();
+		} catch (err) {
+			addToast({
+				type: 'error',
+				message: `Failed to play video: ${err.message || 'Unknown error'}`
+			});
+		}
+	}
+
+	async function handleButtonClick() {
 		try {
 			if (!isCurrentVideo || error) {
 				if (error) {
 					youtubePlayerService.clearError?.();
 				}
 
-				console.log('Loading video:', videoId);
 				await youtubePlayerService.togglePlay(videoId, playerEl, id);
 			} else {
-				console.log('Toggling play/pause for video:', videoId, 'isPlaying:', isPlaying);
 				await youtubePlayerService.togglePlay(videoId, playerEl, id);
 			}
 		} catch (error) {
-			console.error('Error in handleButtonClick:', error);
 			addToast({
 				type: 'error',
 				message: `Failed to play video: ${error.message || 'Unknown error'}`

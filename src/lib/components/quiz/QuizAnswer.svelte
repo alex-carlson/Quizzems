@@ -49,7 +49,6 @@
 	function checkFillAnswer(values) {
 		if (isLockedIn) return;
 
-		// normalize to array
 		const inputValues = Array.isArray(values) ? values : [values];
 
 		const correctArr = getCorrectAnswer()
@@ -61,9 +60,15 @@
 
 			const normalized = (val ?? '').toString().trim().toLowerCase();
 
-			const matchIndex = correctArr.findIndex(
-				(c, ci) => !usedCorrect.has(ci) && areStringsClose(normalized, c, 0.95)
-			);
+			// 1. Try exact match first
+			let matchIndex = correctArr.findIndex((c, ci) => !usedCorrect.has(ci) && normalized === c);
+
+			// 2. Fallback to fuzzy match
+			if (matchIndex === -1) {
+				matchIndex = correctArr.findIndex(
+					(c, ci) => !usedCorrect.has(ci) && areStringsClose(normalized, c, 0.85) // slightly looser helps here
+				);
+			}
 
 			if (matchIndex !== -1) {
 				lockedAnswers[i] = true;
@@ -270,7 +275,11 @@
 		</div>
 	{:else}
 		<span class={item.isCorrect ? 'answer correct' : 'answer incorrect'}>
-			{item.answer[0]}
+			{#if item.num_required > 1}
+				{item.answer.join(', ')}
+			{:else}
+				{item.answer[0]}
+			{/if}
 		</span>
 		{#if item.extra}
 			<span>{item.extra}</span>

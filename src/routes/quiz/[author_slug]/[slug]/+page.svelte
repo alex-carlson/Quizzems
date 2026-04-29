@@ -12,7 +12,7 @@
 	import { getScoreMessage } from '$lib/api/quizScore.js';
 	export let data;
 	import { quiz } from '$store/quiz.js';
-	import { fetchCollectionItems } from '$lib/api/items.js';
+	import { get } from 'svelte/store';
 
 	// Destructure page data with fallbacks
 	const { category, collectionId, author, thumbnail, quizScore, timesPlayed, meta } = data || {};
@@ -103,7 +103,7 @@
 		}
 
 		// Increment play count for analytics
-		if (collectionId) {
+		if (collectionId && !isPractice) {
 			incrementPlayCounter(collectionId);
 		}
 		loading = false;
@@ -159,16 +159,10 @@
 			console.error('Missing route parameters');
 		}
 
-		if ([400, 404, 500].includes(data?.status)) return;
-
-		const cards = await fetchCollectionItems(collectionId, false);
-
-		quiz.setCards(cards);
-		quiz.setQuizStarted(false);
 		quiz.setCollectionId(collectionId);
-		const canEditCollection = await refreshEditPermission();
-
-		quiz.setCanEditCollection(canEditCollection);
+		quiz.loadCards(collectionId);
+		quiz.setQuizStarted(false);
+		quiz.setCanEditCollection(await refreshEditPermission());
 
 		if (typeof window !== 'undefined') {
 			history.pushState(null, '', window.location.href);

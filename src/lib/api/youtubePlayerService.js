@@ -165,18 +165,34 @@ class YouTubePlayerService {
         this.player.loadVideoById(videoId);
     }
 
-    // 🔥 FIXED SAFE PLAY (THIS FIXES YOUR FIRST CLICK ERROR)
     async safePlay() {
         if (!this.player) return;
 
         await this.readyPromise;
 
-        // allow YouTube internal iframe to finish wiring
         await new Promise(requestAnimationFrame);
 
         try {
             this.player.playVideo();
             this.setState({ isPlaying: true });
+        } catch (e) {
+            console.warn('[YouTubeService] playVideo failed:', e);
+            this.setState({
+                error: 'Playback failed. Please try again.'
+            });
+        }
+    }
+
+    async pause() {
+        if (!this.player) return;
+
+        await this.readyPromise;
+
+        await new Promise(requestAnimationFrame);
+
+        try {
+            this.player.pauseVideo();
+            this.setState({ isPlaying: false });
         } catch (e) {
             console.warn('[YouTubeService] playVideo failed:', e);
             this.setState({

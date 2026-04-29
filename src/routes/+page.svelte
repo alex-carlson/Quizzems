@@ -92,12 +92,5 @@
 </div>
 
 <div class="container mt-5">
-	<h2>Try Potpourri!</h2>
-	<a href="/potpourri">p</a>
-</div>
-
-<div class="container">
-	<div class="mt-3 mb-5">
-		<a href="/explore?sort=popular">See More...</a>
-	</div>
+	<h2><a href="/potpourri">Try Potpourri!</a></h2>
 </div>

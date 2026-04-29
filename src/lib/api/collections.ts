@@ -114,7 +114,7 @@ export async function incrementPlayCounter(collectionId: string) {
     const url = `/collections/incrementPlays/${collectionId}`;
     console.log("Incrementing play counter for collection:", collectionId);
     try {
-        const response = await apiFetch(url, 'POST', null, false);
+        const response = await apiFetch(url, 'POST', null, false, false);
         return response;
     } catch (error) {
         console.error("Error incrementing play counter:", error);

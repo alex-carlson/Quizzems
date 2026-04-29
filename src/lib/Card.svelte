@@ -1,14 +1,19 @@
 <script>
-	import { onDestroy } from 'svelte';
+	import { onDestroy, createEventDispatcher } from 'svelte';
 	import { quiz } from '$store/quiz';
 	import QuizAnswer from '$lib/components/quiz/QuizAnswer.svelte';
 
 	import LazyLoadImage from './LazyLoadImage.svelte';
 	import YoutubeAudioPlayer from '$lib/YoutubeAudioPlayer.svelte';
-	import { QuestionType } from './types/enums';
 
 	export let i = 0;
-	let refs = {};
+
+	export function playAudio() {
+		playerRef?.play();
+	}
+
+	let playerRef;
+	const dispatch = createEventDispatcher();
 
 	// ---------- STATE ----------
 	$: item = $quiz.cards?.[i];
@@ -17,18 +22,26 @@
 	// ---------- LOCAL ----------
 	let validationTimeout;
 	let prevRevealed = false;
-	let container;
 
 	$: {
 		const wasJustAnswered = !prevRevealed && item.revealed;
 
-		if (wasJustAnswered && $quiz.currentMode === 'FILL_IN_THE_BLANK') {
-			const nextIndex = $quiz.cards.findIndex((c, idx) => idx > i && !c.revealed);
-			if (nextIndex !== -1) {
-				setTimeout(() => {
-					scrollToIndex(nextIndex);
-				}, 100);
+		if (wasJustAnswered) {
+			if ($quiz.currentMode === 'FILL_IN_THE_BLANK') {
+				const nextIndex = $quiz.cards.findIndex((c, idx) => idx > i && !c.revealed);
+				if (nextIndex !== -1) {
+					setTimeout(() => {
+						scrollToIndex(nextIndex);
+					}, 100);
+				}
 			}
+
+			const event = {
+				...item,
+				index: i
+			};
+
+			dispatch('correctAnswer', event);
 		}
 
 		prevRevealed = item.revealed;
@@ -63,14 +76,13 @@
 		data-card-index={i}
 		role="button"
 		tabindex="-1"
-		bind:this={container}
 		on:keydown={(e) => currentMode === 'FLASH_CARDS' && e.key === 'Enter'}
 	>
 		{#if $quiz.showCategory}
 			<h3>{item.collection_name}</h3>
 		{/if}
 		{#if item.type === 'audio'}
-			<YoutubeAudioPlayer id={item.id} videoId={item.audio} />
+			<YoutubeAudioPlayer id={item.id} videoId={item.audio} bind:this={playerRef} />
 		{/if}
 
 		{#if item.type === 'image' && item.url}
@@ -81,7 +93,7 @@
 			<span>{item.supplemental}</span>
 		{/if}
 
-		{#if item.question && item.question_type === QuestionType.TEXT}
+		{#if item.question && item.url === null}
 			<h2 class="p-3">{item.question}</h2>
 		{/if}
 
