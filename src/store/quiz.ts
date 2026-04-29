@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 import { fetchCollectionItems } from '$lib/api/items';
+import { fetchCollectionById } from '$lib/api/collections';
 
 const getInitialState = () => ({
     hasInitialized: false,
@@ -36,6 +37,12 @@ function createQuizStore() {
 
         setCards: (cards) => patch({ cards }),
         setCollectionId: (collectionId) => patch({ collectionId }),
+
+        setCollection: (collection) =>
+        update((state) => ({
+            ...state,
+            collection
+        })),
 
         setMode: (currentMode) => patch({ currentMode }),
         setIsPractice: (isPractice) => patch({ isPractice }),
@@ -76,13 +83,43 @@ function createQuizStore() {
         loadCards: async (collectionId) => {
             if (!collectionId) return;
 
-            patch({ isLoading: true });
+            patch({ isLoading: true, collectionId });
 
             const res = await fetchCollectionItems(collectionId, false);
             const cards = Array.isArray(res) ? res : res?.data || [];
 
             patch({ cards, isLoading: false });
         },
+
+        loadCollection: async (collectionId) => {
+            if (!collectionId) return;
+
+            patch({ isLoading: true });
+
+            const collection = await fetchCollectionById(collectionId, true);
+
+            if (!collection) {
+                patch({ isLoading: false });
+                return;
+            }
+
+            const res = await fetchCollectionItems(collectionId, false);
+            const cards = Array.isArray(res) ? res : res?.data || [];
+
+            patch({
+                collection,
+                collectionId,
+                cards,
+                isLoading: false
+            });
+        },
+
+        addCard: (card) =>
+        update((state) => ({
+            ...state,
+            cards: [...state.cards, card]
+        })),
+        
 
         reset: () => set(getInitialState())
     };
