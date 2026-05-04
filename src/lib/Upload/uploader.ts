@@ -154,6 +154,7 @@ export async function uploadData(item, uuid = uuidv4(), forceJpg = false) {
 
     // If file is a URL (string), call /upload-url
     if (typeof item.file === 'string') {
+        console.log("Item:", item);
         return handleUpload(async () => {
             const data = addUserAuthToData({
                 uuid,
@@ -172,7 +173,7 @@ export async function uploadData(item, uuid = uuidv4(), forceJpg = false) {
                 existingItemId: item.existingItemId,
                 isUpdate: item.isUpdate,
             }, usr, item.category);
-            return await apiFetch('/items/upload-url', 'POST', data);
+            return await apiFetch('/items/upload-url', 'POST', data, false, true);
         }, 'Error uploading URL data', undefined);
     }
 

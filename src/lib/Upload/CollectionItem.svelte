@@ -22,7 +22,6 @@
 	export let index;
 	export let editableItemId;
 	export let isReordering;
-	export let collection; // Add collection prop to get category
 	let isCropping = false; // Track if cropping is active
 	let isDrawing = false; // Track if drawing is active
 	let isDragging = false; // Track drag state

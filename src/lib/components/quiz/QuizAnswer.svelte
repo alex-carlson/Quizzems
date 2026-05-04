@@ -49,41 +49,66 @@
 	function checkFillAnswer(values) {
 		if (isLockedIn) return;
 
+		// If num_required is null or undefined, set to 1
+		if (item.num_required == null) {
+			item.num_required = 1;
+		}
+
 		const inputValues = Array.isArray(values) ? values : [values];
 
 		const correctArr = getCorrectAnswer()
 			.filter(Boolean)
 			.map((v) => v.toString().trim().toLowerCase());
 
-		inputValues.forEach((val, i) => {
-			if (lockedAnswers[i]) return;
+		console.log("Checking answers", { inputValues, correctArr });
 
-			const normalized = (val ?? '').toString().trim().toLowerCase();
+		// Track which input and which correct answer have been matched
+		let matchedInputs = new Set();
+		let matchedCorrect = new Set(usedCorrect); // preserve already used
 
-			// 1. Try exact match first
-			let matchIndex = correctArr.findIndex((c, ci) => !usedCorrect.has(ci) && normalized === c);
-
-			// 2. Fallback to fuzzy match
-			if (matchIndex === -1) {
-				matchIndex = correctArr.findIndex(
-					(c, ci) => !usedCorrect.has(ci) && areStringsClose(normalized, c, 0.85) // slightly looser helps here
-				);
-			}
-
-			if (matchIndex !== -1) {
-				lockedAnswers[i] = true;
-				usedCorrect.add(matchIndex);
+		// For each correct answer, try to find a matching input
+		correctArr.forEach((correct, ci) => {
+			if (matchedCorrect.has(ci)) return;
+			let found = false;
+			inputValues.forEach((val, i) => {
+				if (lockedAnswers[i] || matchedInputs.has(i)) return;
+				const normalized = (val ?? '').toString().trim().toLowerCase();
+				// 1. Try exact match
+				if (normalized === correct) {
+					lockedAnswers[i] = true;
+					matchedInputs.add(i);
+					matchedCorrect.add(ci);
+					usedCorrect.add(ci);
+					found = true;
+					return;
+				}
+			});
+			if (!found) {
+				// Fallback to fuzzy match
+				inputValues.forEach((val, i) => {
+					if (lockedAnswers[i] || matchedInputs.has(i)) return;
+					const normalized = (val ?? '').toString().trim().toLowerCase();
+					if (areStringsClose(normalized, correct, 0.85)) {
+						lockedAnswers[i] = true;
+						matchedInputs.add(i);
+						matchedCorrect.add(ci);
+						usedCorrect.add(ci);
+						found = true;
+						return;
+					}
+				});
 			}
 		});
 
-		if (usedCorrect.size === correctArr.length) {
+		// Mark complete if enough answers are correct
+		if (usedCorrect.size >= item.num_required) {
 			isLockedIn = true;
-
 			updateCard({
 				revealed: true,
 				userAnswer: inputValues,
 				isCorrect: true
 			});
+			console.log("All required correct!");
 		}
 	}
 
