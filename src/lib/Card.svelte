@@ -81,11 +81,12 @@
 		{#if $quiz.showCategory}
 			<h3>{item.collection_name}</h3>
 		{/if}
+
 		{#if item.type === 'audio'}
 			<YoutubeAudioPlayer id={item.id} videoId={item.audio} bind:this={playerRef} />
 		{/if}
 
-		{#if item.type === 'image' && item.url}
+		{#if item.url}
 			<LazyLoadImage imageUrl={item.url} />
 		{/if}
 

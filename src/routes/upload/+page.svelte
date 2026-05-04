@@ -4,7 +4,6 @@
 	import Collections from '$lib/Collections.svelte';
 	import CollectionItem from '$lib/Upload/CollectionItem.svelte';
 	import CollectionInfo from '$lib/Upload/CollectionInfo.svelte';
-	import { fetchUserCollections } from '$lib/api/collections';
 	import {
 		removeItem,
 		createCollection,
@@ -22,10 +21,8 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 
-	let questionType = 'Image';
 	let editableItemId = null;
 	let isReordering = false;
-	let collections = [];
 	let showCropper = false;
 	let item = {};
 	let tempCategory = '';
@@ -38,10 +35,11 @@
 	let tagDebounceTimeout;
 	let lastUserId;
 	let showCollections = true;
+	let questionType = 'Image';
 
 	onMount(() => {
 		if ($user?.public_id) {
-			loadCollections();
+			quiz.loadUserCollections($user.public_id);
 		}
 
 		channel = supabase
@@ -62,7 +60,7 @@
 							}
 						}
 					}
-					loadCollections();
+					quiz.loadUserCollections($user.public_id);
 				}
 			)
 			.subscribe();
@@ -74,7 +72,7 @@
 
 	$: if ($user?.public_id && $user.public_id !== lastUserId) {
 		lastUserId = $user.public_id;
-		loadCollections();
+		quiz.loadUserCollections($user.public_id);
 	}
 
 	$: {
@@ -86,19 +84,6 @@
 		) {
 			autoOpenedCollectionId = requestedCollectionId;
 			quiz.loadCollection(requestedCollectionId);
-		}
-	}
-
-	async function loadCollections() {
-		try {
-			const result = await fetchUserCollections($user.public_id);
-			collections = result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-		} catch (error) {
-			console.error(error);
-			addToast({
-				type: 'error',
-				message: 'Failed to load collections.'
-			});
 		}
 	}
 
@@ -163,7 +148,7 @@
 
 			{#if showCollections}
 				<Collections
-					{collections}
+					collections={$quiz.userCollections || []}
 					grid
 					onSelectCollection={(e) => quiz.loadCollection(e.id)}
 				/>
@@ -200,7 +185,7 @@
 					Questions ({$quiz.cards?.length || 0})
 				</div>
 				<ul class="list-group">
-					{#each $quiz.collection.items as item, index (item.id)}
+					{#each $quiz.cards as item, index (item.id)}
 						<CollectionItem
 							{item}
 							{index}
@@ -238,7 +223,6 @@
 			<QuestionTypeForm
 				bind:item
 				{questionType}
-				on:itemAdded={(e) => quiz.addCard(e.detail)}
 			/>
 
 			<div class="mt-3 d-flex gap-2">
@@ -283,9 +267,6 @@
 </div>
 
 <style>
-	.action-buttons {
-		flex-grow: 1;
-	}
 
 	.card {
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
@@ -304,32 +285,9 @@
 		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 	}
 
-	.list-group-item {
-		border-left: none;
-		border-right: none;
-		padding: 1rem 1.5rem;
-	}
-
-	.list-group-item:first-child {
-		border-top: none;
-	}
-
-	.list-group-item:last-child {
-		border-bottom: none;
-	}
-
 	@media (max-width: 768px) {
 		.uploader {
 			padding: 1rem 0.5rem;
-		}
-
-		.d-flex.justify-content-between {
-			flex-direction: column;
-			gap: 1rem;
-		}
-
-		.action-buttons {
-			order: 2;
 		}
 	}
 </style>

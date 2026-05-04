@@ -1,16 +1,15 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
 	import FileUpload from '../Upload/FileUpload.svelte';
 	import AudioUploader from '../Upload/AudioUploader.svelte';
 	import ImageSuggestions from '../Upload/ImageSuggestions.svelte';
 	import AnswerInput from './AnswerInput.svelte';
 	import { addToast } from '../../store/toast';
-	import { uploadData, uploadQuestion, uploadAudio } from '../Upload/uploader';
+	// Use quiz store for all uploads
+	import { quiz } from '$store/quiz';
 	import { QuestionType, AnswerType } from '$lib/types/enums';
 	import { Fa } from 'svelte-fa';
 	import { faUpload, faSearch } from '@fortawesome/free-solid-svg-icons';
-
-	const dispatch = createEventDispatcher();
+	import { user } from '$store/user';
 
 	// collection is passed for reference only, component doesn't mutate it directly
 	export const collection = {};
@@ -20,7 +19,7 @@
 
 	let imageSuggestions = [];
 	let searchTerm = '';
-	let fileUploadComponent; // Reference to FileUpload component
+	let fileUploadComponent;
 
 	// Check if Add Image button should be enabled
 	$: isImageUploadDisabled = (() => {
@@ -84,65 +83,31 @@
 		const uploadItem = {
 			...item,
 			questionType: QuestionType.IMAGE,
-			answerType: item.answerType || AnswerType.SINGLE
+			answerType: item.answerType || AnswerType.SINGLE,
+			category: $quiz.collection?.category || '',
+			author: $user?.username,
+			author_id: $user?.public_id
 		};
 
 		// If we only have a URL source, convert it to a file object
 		if (item.src && !item.file) {
-			console.log('Converting URL to file object:', item.src);
 			try {
 				const response = await fetch(item.src);
 				const blob = await response.blob();
 				const filename = item.src.split('/').pop()?.split('?')[0] || 'image';
 				const file = new File([blob], filename, { type: blob.type });
 				uploadItem.file = file;
-				uploadItem.src = ''; // Clear src since we now have a file
-				console.log('URL converted to file:', file);
-			} catch (error) {
-				console.error('Failed to fetch image from URL:', error);
-				addToast({
-					type: 'error',
-					message: 'Failed to load image from URL. Please try again.'
-				});
+				uploadItem.src = '';
+			} catch {
+				addToast({ type: 'error', message: 'Failed to load image from URL. Please try again.' });
 				return;
 			}
 		}
 
-		const newItems = await uploadData(uploadItem, undefined, false);
+		const newItems = await quiz.uploadData(uploadItem, undefined, false);
 		if (newItems && Array.isArray(newItems) && newItems.length > 0 && newItems[0]?.items) {
-			// Dispatch event to parent instead of directly modifying collection
-			dispatch('itemAdded', {
-				items: newItems[0].items,
-				itemsLength: newItems[0].items.length,
-				questionType: 'image'
-			});
-
-			// Check for duplicate answers
-			const currentAnswer = Array.isArray(item.answers)
-				? item.answers.join(' ').trim().toLowerCase()
-				: (item.answer || '').trim().toLowerCase();
-
-			if (currentAnswer && newItems[0].items.length > 1) {
-				const existingAnswers = newItems[0].items
-					.slice(0, -1)
-					.map((i) =>
-						Array.isArray(i.answers)
-							? i.answers.join(' ').trim().toLowerCase()
-							: (i.answer || '').trim().toLowerCase()
-					);
-				if (existingAnswers.includes(currentAnswer)) {
-					addToast({
-						type: 'warning',
-						message: 'This answer already exists in the collection.'
-					});
-				} else {
-					addToast({
-						type: 'success',
-						message: 'Image added successfully!'
-					});
-				}
-			}
-
+			quiz.setCards(newItems[0].items);
+			addToast({ type: 'success', message: 'Image added successfully!' });
 			item.question = '';
 			item.answer = '';
 			item.answers = '';
@@ -151,11 +116,7 @@
 			item.supplemental_text = '';
 			imageSuggestions = [];
 			searchTerm = '';
-			// Clear the FileUpload component
-			if (fileUploadComponent) {
-				fileUploadComponent.clearImage();
-			}
-			// Focus and scroll to question input for next item
+			if (fileUploadComponent) fileUploadComponent.clearImage();
 			setTimeout(focusQuestionInput, 100);
 		}
 	}
@@ -167,25 +128,15 @@
 			questionType: QuestionType.AUDIO,
 			answerType: item.answerType || AnswerType.SINGLE
 		};
-		const newItems = await uploadAudio(audioItem);
+		const newItems = await quiz.uploadAudio(audioItem);
 		if (newItems && Array.isArray(newItems) && newItems.length > 0 && newItems[0]?.items) {
-			// Dispatch event to parent instead of directly modifying collection
-			dispatch('itemAdded', {
-				items: newItems[0].items,
-				itemsLength: newItems[0].items.length,
-				questionType: 'audio'
-			});
-
-			addToast({
-				type: 'success',
-				message: 'Audio added successfully!'
-			});
+			quiz.setCards(newItems[0].items);
+			addToast({ type: 'success', message: 'Audio added successfully!' });
 			item.question = '';
 			item.answer = '';
 			item.answers = '';
 			item.src = '';
 			item.supplemental_text = '';
-			// Focus and scroll to question input for next item
 			setTimeout(focusQuestionInput, 100);
 		}
 	}
@@ -198,23 +149,14 @@
 			});
 			return;
 		}
-		const newItems = await uploadQuestion({
+		const newItems = await quiz.uploadQuestion({
 			...item,
 			questionType: QuestionType.TEXT,
 			answerType: item.answerType || AnswerType.SINGLE
 		});
 		if (newItems && Array.isArray(newItems) && newItems.length > 0 && newItems[0]?.items) {
-			// Dispatch event to parent instead of directly modifying collection
-			dispatch('itemAdded', {
-				items: newItems[0].items,
-				itemsLength: newItems[0].items.length,
-				questionType: 'text'
-			});
-
-			addToast({
-				type: 'success',
-				message: 'Question added successfully!'
-			});
+			quiz.setCards(newItems[0].items);
+			addToast({ type: 'success', message: 'Question added successfully!' });
 			item.question = '';
 			item.answer = '';
 			item.answers = '';
@@ -222,9 +164,10 @@
 			item.supplemental_text = '';
 			const inputs = document.querySelectorAll('input, textarea');
 			inputs.forEach((input) => {
-				input.value = '';
+				if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
+					input.value = '';
+				}
 			});
-			// Focus and scroll to question input for next item
 			setTimeout(focusQuestionInput, 100);
 		}
 	}
@@ -304,6 +247,7 @@
 								on:addImage={(e) => {
 									item.file = e.detail.file;
 									if (e.detail.src) item.src = e.detail.src;
+									item = { ...item };
 								}}
 							/>
 						</div>
@@ -342,7 +286,7 @@
 						class="form-control"
 						bind:value={item.question}
 						placeholder="Enter the question"
-					/>
+					></textarea>
 				</div>
 				<AnswerInput bind:item idPrefix="answer-question" />
 				<button type="submit" class="btn btn-success mt-2">Add Question</button>
@@ -453,22 +397,5 @@
 		margin-bottom: 8px;
 		display: block;
 		color: #495057;
-	}
-
-	.image-preview {
-		margin-top: 15px;
-		text-align: center;
-	}
-
-	.image-preview img {
-		max-height: 200px;
-		border-radius: 8px;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-	}
-
-	.audio-preview {
-		padding: 10px;
-		background: #f8f9fa;
-		border-radius: 8px;
 	}
 </style>
