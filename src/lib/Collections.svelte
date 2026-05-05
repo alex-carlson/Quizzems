@@ -134,6 +134,7 @@
 	async function retryLoad() {
 		await loadCollections();
 	}
+	
 
 	$: processedCollections = (() => {
 		// Don't process until we have either passed collections or have finished loading
