@@ -7,11 +7,11 @@
 	import { apiFetch } from '$lib/api/fetchdata';
 	import { onMount } from 'svelte';
 	import { fetchCollaborators } from '$lib/api/user';
-	import { user } from '$stores/user';
+	import { user as userStore } from '$stores/user';
 	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
 
-	$: userId = get(user)?.id ?? null;
+	$: userId = get(userStore)?.id ?? null;
 
 	export let collection;
 	export let tempCategory = '';
@@ -241,245 +241,237 @@
 	$: dispatch('shuffleChanged', isShuffle);
 </script>
 
-<div class="collection-section mb-5">
-	<div class="collection card p-4">
-		<div class="collection-info">
-			<div class="row g-4 align-items-start mb-4">
-				<div class="col-12 col-lg-4">
-					<div class="thumbnail-section">
-						<h5 class="mb-3">Collection Thumbnail</h5>
-						{#if collection.thumbnail_url}
-							<div class="preview mb-3">
-								<div class="thumbnail-preview mb-3">
-									<img
-										src={collection.thumbnail_url}
-										alt="Collection Thumbnail"
-										class="img-fluid rounded"
-										style="width: 100%; max-width: 200px; height: 150px; object-fit: cover;"
-									/>
-								</div>
-								<button class="btn btn-outline-secondary btn-sm" on:click={toggleCropper}>
-									Edit Thumbnail
-								</button>
-								{#if showCropper}
-									<div class="mt-3">
-										<Cropper
-											src={collection.thumbnail_url}
-											on:cropped={onCropped}
-											on:cancel={toggleCropper}
-										/>
-									</div>
-								{/if}
-							</div>
-						{:else}
-							<div class="upload-prompt text-center p-4 border rounded bg-light mb-3">
-								<p class="text-muted mb-2">No thumbnail uploaded</p>
-							</div>
-						{/if}
-						<div class="thumbnail-uploader">
-							<FileUpload
-								bind:this={thumbnailUploader}
-								on:uploadImage={async (event) => {
-									console.log('Thumbnail upload event:', event.detail);
-									try {
-										const result = await uploadThumbnail(event.detail, collection.category);
-										if (result) {
-											console.log('Thumbnail upload successful:', result);
-											// Clear the image after successful upload
-											if (thumbnailUploader && typeof thumbnailUploader.clearImage === 'function') {
-												thumbnailUploader.clearImage();
-											}
-											dispatch('thumbnailUpdated', result);
-										}
-									} catch (error) {
-										console.error('Error uploading thumbnail:', error);
-										addToast({
-											type: 'error',
-											message: 'Failed to upload thumbnail. Please try again.'
-										});
-									}
-								}}
-							/>
-						</div>
+<div class="collection-section p-2">
+	<div class="thumbnail-section mb-5 p-2">
+		<h5 class="mb-3">Collection Thumbnail</h5>
+		{#if collection.thumbnail_url}
+			<div class="preview mb-3">
+				<div class="thumbnail-preview mb-3">
+					<img
+						src={collection.thumbnail_url}
+						alt="Collection Thumbnail"
+						class="img-fluid rounded"
+						style="width: 100%; max-width: 200px; height: 150px; object-fit: cover;"
+					/>
+				</div>
+				<button class="btn btn-outline-secondary btn-sm" on:click={toggleCropper}>
+					Edit Thumbnail
+				</button>
+				{#if showCropper}
+					<div class="mt-3">
+						<Cropper
+							src={collection.thumbnail_url}
+							on:cropped={onCropped}
+							on:cancel={toggleCropper}
+						/>
+					</div>
+				{/if}
+			</div>
+		{:else}
+			<div class="upload-prompt text-center p-4 border rounded bg-light mb-3">
+				<p class="text-muted mb-2">No thumbnail uploaded</p>
+			</div>
+		{/if}
+		<div class="thumbnail-uploader">
+			<FileUpload
+				bind:this={thumbnailUploader}
+				on:uploadImage={async (event) => {
+					console.log('Thumbnail upload event:', event.detail);
+					try {
+						const result = await uploadThumbnail(event.detail, collection.category);
+						if (result) {
+							console.log('Thumbnail upload successful:', result);
+							// Clear the image after successful upload
+							if (thumbnailUploader && typeof thumbnailUploader.clearImage === 'function') {
+								thumbnailUploader.clearImage();
+							}
+							dispatch('thumbnailUpdated', result);
+						}
+					} catch (error) {
+						console.error('Error uploading thumbnail:', error);
+						addToast({
+							type: 'error',
+							message: 'Failed to upload thumbnail. Please try again.'
+						});
+					}
+				}}
+			/>
+		</div>
+	</div>
+</div>
+<div class="col-12">
+	<div class="collection-details">
+		<h5 class="mb-3">Collection Details</h5>
+		<div class="mb-3">
+			<label class="form-label" for="category">Category Name</label>
+			<input
+				id="category"
+				type="text"
+				class="form-control"
+				bind:value={tempCategory}
+				placeholder={collection.category}
+			/>
+		</div>
+		<div class="mb-3">
+			<label class="form-label" for="description">Description</label>
+			<textarea
+				id="description"
+				class="form-control"
+				rows="3"
+				bind:value={tempDescription}
+				placeholder="Category Description (Optional)"
+			></textarea>
+		</div>
+		<div class="mb-3">
+			<label class="form-label" for="tags">Tags</label>
+			<input
+				id="tags"
+				type="text"
+				class="form-control"
+				placeholder="Add tags (comma-separated)"
+				bind:value={tempTags}
+			/>
+		</div>
+		{#if suggestedTags.length > 0}
+			<div class="suggested-tags mt-2 p-3 bg-light rounded">
+				<div class="small text-muted mb-2">Suggestions:</div>
+				<div class="d-flex flex-wrap gap-1">
+					{#each suggestedTags as tag}
+						<button
+							type="button"
+							class="btn btn-sm btn-outline-secondary"
+							on:click={() => addSuggestedTag(tag)}
+						>
+							{tag}
+						</button>
+					{/each}
+				</div>
+			</div>
+		{/if}
+		<div class="settings-section mt-4">
+			<h6 class="mb-3">Settings</h6>
+			<div class="settings-grid">
+				<div class="setting-item">
+					<div class="form-check form-switch">
+						<input
+							id="privacy-toggle"
+							type="checkbox"
+							class="form-check-input"
+							bind:checked={isPublic}
+							aria-label="Privacy"
+						/>
+						<label for="privacy-toggle" class="form-check-label">
+							{isPublic ? 'Public' : 'Private'}
+						</label>
 					</div>
 				</div>
-				<div class="col-12 col-lg-8">
-					<div class="collection-details">
-						<h5 class="mb-3">Collection Details</h5>
-						<div class="mb-3">
-							<label class="form-label" for="category">Category Name</label>
-							<input
-								id="category"
-								type="text"
-								class="form-control"
-								bind:value={tempCategory}
-								placeholder={collection.category}
-							/>
-						</div>
-						<div class="mb-3">
-							<label class="form-label" for="description">Description</label>
-							<textarea
-								id="description"
-								class="form-control"
-								rows="3"
-								bind:value={tempDescription}
-								placeholder="Category Description (Optional)"
-							></textarea>
-						</div>
-						<div class="mb-3">
-							<label class="form-label" for="tags">Tags</label>
-							<input
-								id="tags"
-								type="text"
-								class="form-control"
-								placeholder="Add tags (comma-separated)"
-								bind:value={tempTags}
-							/>
-						</div>
-						{#if suggestedTags.length > 0}
-							<div class="suggested-tags mt-2 p-3 bg-light rounded">
-								<div class="small text-muted mb-2">Suggestions:</div>
-								<div class="d-flex flex-wrap gap-1">
-									{#each suggestedTags as tag}
-										<button
-											type="button"
-											class="btn btn-sm btn-outline-secondary"
-											on:click={() => addSuggestedTag(tag)}
-										>
-											{tag}
-										</button>
-									{/each}
-								</div>
-							</div>
-						{/if}
-						<div class="settings-section mt-4">
-							<h6 class="mb-3">Settings</h6>
-							<div class="settings-grid">
-								<div class="setting-item">
-									<div class="form-check form-switch">
-										<input
-											id="privacy-toggle"
-											type="checkbox"
-											class="form-check-input"
-											bind:checked={isPublic}
-											aria-label="Privacy"
-										/>
-										<label for="privacy-toggle" class="form-check-label">
-											{isPublic ? 'Public' : 'Private'}
-										</label>
-									</div>
-								</div>
-								<div class="setting-item">
-									<div class="form-check form-switch">
-										<input
-											id="shuffle-toggle"
-											type="checkbox"
-											class="form-check-input"
-											bind:checked={isShuffle}
-											aria-label="Shuffle Questions"
-										/>
-										<label for="shuffle-toggle" class="form-check-label"> Shuffle Questions </label>
-									</div>
-								</div>
-							</div>
-							<div class="mt-4 d-flex gap-2">
-								<button type="button" class="btn btn-primary" on:click={updateCollection}>
-									Save Changes
-								</button>
-								{#if isPublic}
-									<button
-										type="button"
-										class="btn btn-success"
-										on:click={() => {
-											const author_slug = convertToSlug(collection?.author);
-											const slug =
-												collection?.slug ||
-												collection?.category?.toLowerCase().replace(/\s+/g, '-');
-											if (author_slug && slug) {
-												goto(`/quiz/${author_slug}/${slug}`);
-											} else {
-												addToast({
-													type: 'error',
-													message: 'Unable to navigate: missing author or collection slug'
-												});
-											}
-										}}
-									>
-										Play
-									</button>
-								{/if}
-							</div>
-						</div>
-
-						<div class="mb-3">
-							<label for="collaborators" class="form-label">Collaborators</label>
-							<input
-								type="text"
-								placeholder="Search and add collaborators"
-								id="collaborators"
-								class="form-control"
-								bind:value={collaboratorSearch}
-								on:keydown={(e) => {
-									if (e.key === 'Enter') searchCollaborators();
-								}}
-							/>
-							<button
-								type="button"
-								class="btn btn-outline-secondary btn-sm mt-2"
-								on:click={searchCollaborators}
-								disabled={searchingCollaborators}
-							>
-								{searchingCollaborators ? 'Searching...' : 'Search'}
-							</button>
-							{#if searchingCollaborators}
-								<div class="text-muted mt-2">Searching...</div>
-							{:else if collaboratorResults && collaboratorResults.length > 0}
-								{#each collaboratorResults as user}
-									<button
-										type="button"
-										class="btn btn-sm btn-dark ml-2 color-black"
-										on:click={() => addCollaborator(user)}>{user.username}</button
-									>
-								{/each}
-							{:else if collaboratorResults && collaboratorResults.length === 0 && collaboratorSearch.trim() !== ''}
-								<div class="text-muted mt-2">No users found.</div>
-							{:else}
-								<div class="text-muted mt-2">No users found.</div>
-							{/if}
-						</div>
-						{#if tempCollaborators.length > 0}
-							<div class="collaborator-list mt-3">
-								<div class="mb-2">Current Collaborators:</div>
-								{#each tempCollaborators as collab (collab.id)}
-									<span>
-										<a href={`/author/${collab.username_slug}`}>
-											{collab.username}
-										</a>
-										{#if collection.author === $user.username}
-											<button
-												type="button"
-												class="btn btn-sm btn-outline-danger mr-2 mb-2"
-												on:click={() => removeCollaborator(collab)}
-											>
-												remove
-											</button>
-										{:else if collab.username === $user.username}
-											<button
-												type="button"
-												class="btn btn-sm btn-outline-danger mr-2 mb-2"
-												on:click={() => removeCollaborator(collab)}
-											>
-												leave
-											</button>
-										{/if}
-									</span>
-								{/each}
-							</div>
-						{/if}
+				<div class="setting-item">
+					<div class="form-check form-switch">
+						<input
+							id="shuffle-toggle"
+							type="checkbox"
+							class="form-check-input"
+							bind:checked={isShuffle}
+							aria-label="Shuffle Questions"
+						/>
+						<label for="shuffle-toggle" class="form-check-label"> Shuffle Questions </label>
 					</div>
 				</div>
 			</div>
+			<div class="mt-4 d-flex gap-2">
+				<button type="button" class="btn btn-primary" on:click={updateCollection}>
+					Save Changes
+				</button>
+				{#if isPublic}
+					<button
+						type="button"
+						class="btn btn-success"
+						on:click={() => {
+							const author_slug = convertToSlug(collection?.author);
+							const slug =
+								collection?.slug ||
+								collection?.category?.toLowerCase().replace(/\s+/g, '-');
+							if (author_slug && slug) {
+								goto(`/quiz/${author_slug}/${slug}`);
+							} else {
+								addToast({
+									type: 'error',
+									message: 'Unable to navigate: missing author or collection slug'
+								});
+							}
+						}}
+					>
+						Play
+					</button>
+				{/if}
+			</div>
 		</div>
+
+		<div class="mb-3">
+			<label for="collaborators" class="form-label">Collaborators</label>
+			<input
+				type="text"
+				placeholder="Search and add collaborators"
+				id="collaborators"
+				class="form-control"
+				bind:value={collaboratorSearch}
+				on:keydown={(e) => {
+					if (e.key === 'Enter') searchCollaborators();
+				}}
+			/>
+			<button
+				type="button"
+				class="btn btn-outline-secondary btn-sm mt-2"
+				on:click={searchCollaborators}
+				disabled={searchingCollaborators}
+			>
+				{searchingCollaborators ? 'Searching...' : 'Search'}
+			</button>
+			{#if searchingCollaborators}
+				<div class="text-muted mt-2">Searching...</div>
+			{:else if collaboratorResults && collaboratorResults.length > 0}
+				{#each collaboratorResults as user}
+					<button
+						type="button"
+						class="btn btn-sm btn-dark ml-2 color-black"
+						on:click={() => addCollaborator(user)}>{user.username}</button
+					>
+				{/each}
+			{:else if collaboratorResults && collaboratorResults.length === 0 && collaboratorSearch.trim() !== ''}
+				<div class="text-muted mt-2">No users found.</div>
+			{:else}
+				<div class="text-muted mt-2">No users found.</div>
+			{/if}
+		</div>
+		{#if tempCollaborators.length > 0}
+			<div class="collaborator-list mt-3">
+				<div class="mb-2">Current Collaborators:</div>
+				{#each tempCollaborators as collab (collab.id)}
+					<span>
+						<a href={`/author/${collab.username_slug}`}>
+							{collab.username}
+						</a>
+						{#if collection.author === $user.username}
+							<button
+								type="button"
+								class="btn btn-sm btn-outline-danger mr-2 mb-2"
+								on:click={() => removeCollaborator(collab)}
+							>
+								remove
+							</button>
+						{:else if collab.username === $user.username}
+							<button
+								type="button"
+								class="btn btn-sm btn-outline-danger mr-2 mb-2"
+								on:click={() => removeCollaborator(collab)}
+							>
+								leave
+							</button>
+						{/if}
+					</span>
+				{/each}
+			</div>
+		{/if}
 	</div>
 </div>
 

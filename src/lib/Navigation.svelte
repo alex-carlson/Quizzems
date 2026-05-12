@@ -1,9 +1,7 @@
 <script>
-	import { user } from '$stores/user';
-	import UserNav from './UserNav.svelte';
+	import { user } from '../stores/user';
 	import Fa from 'svelte-fa';
 	import {
-		faSearch,
 		faHome,
 		faInfoCircle,
 		faUsers,
@@ -29,27 +27,11 @@
 	];
 </script>
 
-<div class="navContainer">
-	<nav>
-		<ul>
-			{#each navLinks as { href, label, icon, alt, path }}
-				<li class:active={$page.url.pathname === path}>
-					<a {href} aria-label={alt} title={label} class="nav-link-vertical">
-						<Fa {icon} class="fa-icon-large" />
-						<span class="nav-label-small">{label}</span>
-					</a>
-				</li>
-			{/each}
-			{#if $user}
-				<UserNav />
-			{:else}
-				<li>
-					<a href="/login" aria-label="Login" title="Login" class="nav-link-vertical">
-						<Fa icon={faSignInAlt} class="fa-icon-large" />
-						<span class="nav-label-small">Login</span>
-					</a>
-				</li>
-			{/if}
-		</ul>
-	</nav>
-</div>
+		{#each navLinks as { href, label, icon, alt, path } (href)}
+			<li class:active={$page.url.pathname === path}>
+				<a {href} aria-label={alt} title={label} class="nav-link-vertical">
+					<Fa {icon} class="fa-icon-large" />
+					<span class="nav-label-small">{label}</span>
+				</a>
+			</li>
+		{/each}

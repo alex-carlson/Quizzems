@@ -12382,24 +12382,15 @@ footer {
   font-size: 12px;
 }
 
-header .header {
+header {
   align-items: center;
   background-color: var(--header-bg-color);
   color: var(--tertiary-color);
   width: 100%;
   box-shadow: rgba(0, 0, 0, 0.75) 0px 0px 15px;
-}
-header .header img {
-  width: 80%;
-  height: auto;
-  margin: 0;
-  margin: 25px 0;
-  max-width: 600px;
-}
-header .navContainer {
   background-color: #202020;
 }
-header .navContainer ul {
+header ul {
   display: flex;
   flex-direction: row;
   justify-content: center;
@@ -12409,39 +12400,39 @@ header .navContainer ul {
   gap: 2.2rem;
 }
 @media (max-width: 700px) {
-  header .navContainer ul {
+  header ul {
     gap: 0.7rem;
   }
-  header .navContainer ul li {
+  header ul li {
     margin: 0 2px;
     font-size: 0.85em;
   }
-  header .navContainer ul li a {
+  header ul li a {
     font-size: 0.85em;
   }
 }
-header .navContainer ul li {
+header ul li {
   margin: 0 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-header .navContainer ul li.active a {
+header ul li.active a {
   color: var(--yellow);
 }
-header .navContainer ul li a {
+header ul li a {
   color: white;
   text-decoration: none;
 }
-header .navContainer ul li.user-tab a {
+header ul li.user-tab a {
   display: flex;
   align-items: center;
 }
-header .navContainer ul li.user-tab a .profile-picture {
+header ul li.user-tab a .profile-picture {
   display: flex;
   align-items: center;
 }
-header .navContainer ul li.user-tab a .profile-picture img {
+header ul li.user-tab a .profile-picture img {
   width: 1.5rem;
   height: 1.5rem;
   border-radius: 50%;

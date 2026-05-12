@@ -1,80 +1,67 @@
 header {
-    .header {
-        align-items: center;
-        background-color: var(--header-bg-color);
-        color: var(--tertiary-color);
-        width: 100%;
-        box-shadow: rgba(0, 0, 0, 0.75) 0px 0px 15px;
+    align-items: center;
+    background-color: var(--header-bg-color);
+    color: var(--tertiary-color);
+    width: 100%;
+    box-shadow: rgba(0, 0, 0, 0.75) 0px 0px 15px;
+    background-color: #202020;
 
-        img {
-            width: 80%;
-            height: auto;
-            margin: 0;
-            margin: 25px 0;
-            max-width: 600px;
-        }
-    }
+    ul {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center; // Vertically center the elements
+        margin: 0;
+        padding: 0.5rem;
+        gap: 2.2rem;
 
-    .navContainer {
-        background-color: #202020;
+        @media (max-width: 700px) {
+            gap: 0.7rem;
 
-        ul {
-            display: flex;
-            flex-direction: row;
-            justify-content: center;
-            align-items: center; // Vertically center the elements
-            margin: 0;
-            padding: 0.5rem;
-            gap: 2.2rem;
+            li {
+                margin: 0 2px;
+                font-size: 0.85em;
 
-            @media (max-width: 700px) {
-                gap: 0.7rem;
-
-                li {
-                    margin: 0 2px;
+                a {
                     font-size: 0.85em;
+                }
+            }
+        }
 
-                    a {
-                        font-size: 0.85em;
-                    }
+        li {
+            margin: 0 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+            &.active {
+                a {
+                    color: var(--yellow);
                 }
             }
 
-            li {
-                margin: 0 4px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
+            a {
+                color: white;
+                text-decoration: none;
+            }
 
-                &.active {
-                    a {
-                        color: var(--yellow);
-                    }
-                }
-
+            &.user-tab {
                 a {
-                    color: white;
-                    text-decoration: none;
-                }
+                    // children are span and img, align them horizontally
+                    display: flex;
+                    align-items: center;
 
-                &.user-tab {
-                    a {
-                        // children are span and img, align them horizontally
+                    .profile-picture {
                         display: flex;
                         align-items: center;
 
-                        .profile-picture {
-                            display: flex;
-                            align-items: center;
-
-                            img {
-                                width: 1.5rem;
-                                height: 1.5rem;
-                                border-radius: 50%;
-                            }
+                        img {
+                            width: 1.5rem;
+                            height: 1.5rem;
+                            border-radius: 50%;
                         }
-
                     }
+
                 }
             }
         }

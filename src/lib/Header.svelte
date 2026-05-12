@@ -1,12 +1,13 @@
 <script>
-	import Navigation from './Navigation.svelte';
+    import Navigation from './Navigation.svelte';
+    import UserNav from './UserNav.svelte';
 </script>
 
 <header>
-	<!-- <div class="header">
-        <a href="/">
-            <img src="/logo.png" alt="Logo" />
-        </a>
-    </div> -->
-	<Navigation />
+    <nav>
+        <ul>
+            <Navigation />
+            <UserNav />
+        </ul>
+    </nav>
 </header>
