@@ -182,10 +182,10 @@
 
 			<div class="card mb-4">
 				<div class="card-header">
-					Questions ({$quiz.cards?.length || 0})
+					Questions ({$quiz.collection.items?.length || 0})
 				</div>
 				<ul class="list-group">
-					{#each $quiz.cards as item, index (item.id)}
+					{#each $quiz.collection.items as item, index (item.id)}
 						<CollectionItem
 							{item}
 							{index}

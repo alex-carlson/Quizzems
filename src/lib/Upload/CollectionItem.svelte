@@ -17,17 +17,19 @@
 	import { uploadData, saveEdit } from './uploader.js';
 	import { addToast } from '../../store/toast.js';
 	import { user } from '../../store/user.js';
-	import { json } from '@sveltejs/kit';
+	import { quiz } from '../../store/quiz';
 	export let item;
 	export let index;
 	export let editableItemId;
 	export let isReordering;
-	let isCropping = false; // Track if cropping is active
+
 	let isDrawing = false; // Track if drawing is active
+	let isCropping = false; // Track if cropping is active
 	let isDragging = false; // Track drag state
 	let cropperComponent; // Reference to Cropper component
 	let drawingComponent; // Reference to Drawing component
 	const dispatch = createEventDispatcher();
+	$: quizCollection = $quiz.collection;
 
 	function removeItemHandler() {
 		dispatch('removeItem', item.id);
@@ -107,10 +109,11 @@
 
 	async function performSave() {
 		try {
+
 			// Prepare the edit data in the format expected by the server
 			const editData = {
 				id: item.id,
-				collection: collection?.category || item.category,
+				collection: quizCollection?.category || item.category,
 				author_id: $user.public_id,
 				isUpdate: true // Required by server to use addItemToCollectionHelper path
 			};
@@ -242,8 +245,8 @@
 				file: file,
 				// Keep the existing answer
 				answer: item.answer,
-				// Add category from collection
-				category: collection?.category || item.category,
+				// Add category from quiz store
+				category: quizCollection?.category || item.category,
 				// Send the existing item ID for server validation
 				existingItemId: item.id,
 				// Flag this as an update operation
@@ -395,11 +398,11 @@
 >
 	{#if editableItemId === item.id && item.id != null}
 		<div class="editing">
-			{#if (item.type === 'image' || item.type === 'default') && item.url}
+			{#if item.image || item.url}
 				{#if !isCropping && !isDrawing}
-					<img src={item.url} alt="To crop" class="border" />
+					<img src={item.url || item.image} alt="To crop" class="border" />
 					<div class="actions">
-						{#if isEditable(item.url)}
+						{#if isEditable(item.url || item.image)}
 							<button class="btn btn-image-action me-2" on:click={() => (isCropping = true)}
 								>Crop</button
 							>
@@ -410,7 +413,7 @@
 					<div class="cropper-section mb-3">
 						<Cropper
 							bind:this={cropperComponent}
-							src={item.url}
+							src={item.url || item.image}
 							on:cropped={onCropped}
 							on:cancel={onCancel}
 						/>
@@ -419,7 +422,7 @@
 					<div class="drawing-section mb-3">
 						<Drawing
 							bind:this={drawingComponent}
-							src={item.url}
+							src={item.url || item.image}
 							on:save={onSave}
 							on:cancel={onCancel}
 						/>
@@ -481,8 +484,8 @@
 		<div class="item-display d-flex gap-3 h-100">
 			<div class="content-section flex-half d-flex flex-column">
 				<div class="media-content">
-					{#if (item.type === 'image' || item.type === 'default') && item.url}
-						<img class="preview" src={item.url} alt="Preview" />
+					{#if item.image || item.url}
+						<img class="preview" src={item.url || item.image} alt="Preview" />
 					{:else if item.audio != null}
 						<div class="audio">
 							<img src={`https://img.youtube.com/vi/${item.url}/default.jpg`} alt={item.answer} />
@@ -500,16 +503,16 @@
 			</div>
 			<div class="answer-section flex-half d-flex flex-column">
 				<div class="answer-display">
-					{#if item.answer_type === AnswerType.SINGLE || !isValidAnswerType(item.answer_type)}
-						<span class="answer-text">{item.answer}</span>
-					{:else if item.answer_type === AnswerType.MULTIPLE_CHOICE}
-						<small class="text-muted mb-2">Multiple Choice:</small>
-						{#each item.answer || [] as answer, index (index)}
-							<span class="answer-option" class:correct={item.correctAnswerIndex === index}>
-								{index + 1}. {answer}
-								{#if item.correctAnswerIndex === index}✓{/if}
-							</span>
-						{/each}
+					{#if item.answerType === AnswerType.SINGLE || !isValidAnswerType(item.answer_type)}
+					<span class="answer-text">{item.answer}</span>
+					{:else if item.answerType === AnswerType.MULTIPLE_CHOICE}
+					<small class="text-muted mb-2">Multiple Choice:</small>
+					{#each item.answer || [] as answer, index (index)}
+					<span class="answer-option" class:correct={item.correctAnswerIndex === index}>
+						{index + 1}. {answer}
+						{#if item.correctAnswerIndex === index}✓{/if}
+					</span>
+					{/each}
 					{:else}
 						<small class="text-muted mb-2">
 							Multi-Answer (Required: {item.num_required || normalizeAnswers(item.answer).length}):

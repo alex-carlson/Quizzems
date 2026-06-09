@@ -113,6 +113,8 @@ function createQuizStore() {
             const res = await fetchCollectionItems(collectionId, false);
             const cards = Array.isArray(res) ? res : res?.data || [];
 
+            console.log("Updated cards from loadCards:", cards);
+
             patch({ cards, isLoading: false });
         },
 
@@ -128,12 +130,10 @@ function createQuizStore() {
                 return;
             }
 
-            // const res = await fetchCollectionItems(collectionId, false);
-            // const cards = Array.isArray(res) ? res : res?.data || [];
-            const cards = collection.items || [];
+            const res = await fetchCollectionItems(collectionId, false);
+            const cards = Array.isArray(res) ? res : res?.data || [];
 
             console.log('Loaded collection:', collection);
-            console.log('Loaded cards:', cards);
 
             patch({
                 collection,
