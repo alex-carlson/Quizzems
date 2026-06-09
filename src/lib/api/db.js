@@ -204,3 +204,8 @@ export async function deleteQuiz(id) {
 
   await db.delete('quizzes', id);
 }
+
+export async function getAllQuizzes() {
+  const db = await getDb();
+  return db.getAll('quizzes');
+}
