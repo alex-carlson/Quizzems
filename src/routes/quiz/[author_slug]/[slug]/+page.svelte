@@ -13,7 +13,7 @@
 	import { quiz } from '$store/quiz.js';
 	import { user } from '$store/user.js';
 	import { addToast } from '$store/toast';
-	import { saveQuiz, saveQuizImages, getSavedQuiz, getSavedQuizByRoute, hydrateQuizImages } from '$lib/api/db';
+	import { saveQuiz, saveQuizImages, getSavedQuiz, getSavedQuizByRoute, hydrateQuizImages, deleteQuiz } from '$lib/api/db';
 
 	// Destructure page data with fallbacks
 	const { category, collectionId, author, thumbnail, quizScore, timesPlayed, meta } = data || {};
@@ -25,6 +25,7 @@
 	let cards = [];
 	let isOnline = true;
 	let offlineError = '';
+	let savedQuizExists = false;
 	let isSavingOffline = false;
 	let saveProgress = 0;
 	let saveProgressTotal = 0;
@@ -86,6 +87,7 @@
 			}
 
 			addToast({ type: 'success', message: `Saved ${count} image(s) and quiz data for offline use.` });
+			savedQuizExists = true;
 		} catch (err) {
 			console.error('Offline save failed:', err);
 			addToast({ type: 'error', message: 'Failed to save quiz for offline use.' });
@@ -95,6 +97,45 @@
 			saveProgressMessage = saveProgressTotal > 0 ? 'Offline cache complete.' : 'Offline save complete.';
 			saveProgress = saveProgressTotal;
 		}
+	}
+
+	async function deleteSavedQuiz() {
+		const { author_slug, slug } = $page.params;
+		try {
+			let removed = false;
+			if (collectionId) {
+				await deleteQuiz(collectionId);
+				removed = true;
+			} else {
+				const savedQuiz = await getSavedQuizByRoute(author_slug, slug);
+				if (savedQuiz) {
+					await deleteQuiz(savedQuiz.id);
+					removed = true;
+				}
+			}
+
+			if (removed) {
+				savedQuizExists = false;
+				await refreshSavedQuizExists(author_slug, slug);
+				addToast({ type: 'success', message: 'Offline quiz cache deleted.' });
+			} else {
+				addToast({ type: 'warning', message: 'No offline quiz cache was found to delete.' });
+			}
+		} catch (error) {
+			console.error('Failed to delete offline quiz cache:', error);
+			addToast({ type: 'error', message: 'Failed to delete offline quiz cache.' });
+		}
+	}
+
+	async function refreshSavedQuizExists(author_slug, slug) {
+		let savedQuiz = null;
+		if (collectionId) {
+			savedQuiz = await getSavedQuiz(collectionId);
+		}
+		if (!savedQuiz && author_slug && slug) {
+			savedQuiz = await getSavedQuizByRoute(author_slug, slug);
+		}
+		savedQuizExists = !!savedQuiz;
 	}
 
 	async function refreshEditPermission() {
@@ -237,6 +278,8 @@
 		if (!author_slug || !slug) {
 			console.error('Missing route parameters');
 		}
+
+		await refreshSavedQuizExists(author_slug, slug);
 
 		isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
 		if (typeof window !== 'undefined') {
@@ -398,8 +441,15 @@
 					style="width: auto; padding: 0 2rem;"
 					on:click={() => startQuiz(true)}>Practice</button
 				>
-				<button class="btn btn-outline-secondary"
+				{#if savedQuizExists}
+				<button
+				class="btn btn-outline-danger ms-2"
+				style="width: auto; padding: 0 1.5rem;"
+				on:click={() => deleteSavedQuiz()}>Delete offline copy</button>
+				{:else}
+				<button class="btn btn-outline-secondary ms-2"
 				style="width: auto; padding: 0 rem;" on:click={() => saveQuizToCache()}>Save for offline</button>
+				{/if}
 
 				{#if isSavingOffline}
 					<div class="mt-3">
