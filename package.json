@@ -56,6 +56,7 @@
 		"canvas-confetti": "^1.9.3",
 		"cropperjs": "^1.6.2",
 		"dotenv": "^16.5.0",
+		"idb": "^8.0.3",
 		"socket.io": "^4.8.1",
 		"socket.io-client": "^4.8.1",
 		"svelte-fa": "^4.0.4",

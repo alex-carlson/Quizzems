@@ -8,11 +8,12 @@
 	import QuizHeader from '$lib/components/quiz/QuizHeader.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { user } from '$store/user.js';
 	import { getScoreMessage } from '$lib/api/quizScore.js';
 	export let data;
 	import { quiz } from '$store/quiz.js';
-	import { get } from 'svelte/store';
+	import { user } from '$store/user.js';
+	import { addToast } from '$store/toast';
+	import { saveQuiz, saveQuizImages, getSavedQuiz, getSavedQuizByRoute, hydrateQuizImages } from '$lib/api/db';
 
 	// Destructure page data with fallbacks
 	const { category, collectionId, author, thumbnail, quizScore, timesPlayed, meta } = data || {};
@@ -22,6 +23,12 @@
 	let loading = true;
 	let score = 0;
 	let cards = [];
+	let isOnline = true;
+	let offlineError = '';
+	let isSavingOffline = false;
+	let saveProgress = 0;
+	let saveProgressTotal = 0;
+	let saveProgressMessage = '';
 
 	$: state = $quiz;
 	$: cards = $quiz.cards;
@@ -36,6 +43,57 @@
 		const allRevealed = cards.every((card) => card.revealed);
 		if (allRevealed) {
 			handleQuizFinish();
+		}
+	}
+
+	async function saveQuizToCache(){
+		if (!collectionId) {
+			offlineError = 'No quiz id to save.';
+			addToast({ type: 'error', message: 'Cannot save quiz offline without a collection ID.' });
+			return;
+		}
+
+		if (!cards?.length) {
+			addToast({ type: 'warning', message: 'No quiz cards loaded yet.' });
+			return;
+		}
+
+		isSavingOffline = true;
+		saveProgress = 0;
+		saveProgressTotal = 0;
+		saveProgressMessage = 'Saving quiz for offline use...';
+		addToast({ type: 'info', message: 'Saving quiz for offline use...' });
+
+		try {
+			await saveQuiz(collectionId, cards, {
+				author,
+				category,
+				thumbnail,
+				quizScore,
+				timesPlayed,
+				meta,
+				author_slug: $page.params.author_slug,
+				slug: $page.params.slug
+			});
+
+			const count = await saveQuizImages(cards, ({ current, total }) => {
+				saveProgress = current;
+				saveProgressTotal = total;
+			});
+
+			if (saveProgressTotal > 0) {
+				saveProgressMessage = `Saved ${saveProgress}/${saveProgressTotal} images...`;
+			}
+
+			addToast({ type: 'success', message: `Saved ${count} image(s) and quiz data for offline use.` });
+		} catch (err) {
+			console.error('Offline save failed:', err);
+			addToast({ type: 'error', message: 'Failed to save quiz for offline use.' });
+			offlineError = 'Failed to save quiz for offline use.';
+		} finally {
+			isSavingOffline = false;
+			saveProgressMessage = saveProgressTotal > 0 ? 'Offline cache complete.' : 'Offline save complete.';
+			saveProgress = saveProgressTotal;
 		}
 	}
 
@@ -152,6 +210,27 @@
 		}
 	}
 
+	async function loadSavedQuiz(author_slug, slug) {
+		let savedQuiz = null;
+
+		if (collectionId) {
+			savedQuiz = await getSavedQuiz(collectionId);
+		}
+
+		if (!savedQuiz && author_slug && slug) {
+			savedQuiz = await getSavedQuizByRoute(author_slug, slug);
+		}
+
+		if (!savedQuiz?.cards?.length) return false;
+
+		savedQuiz.cards = await hydrateQuizImages(savedQuiz.cards);
+		offlineError = '';
+		quiz.setCards(savedQuiz.cards);
+		quiz.setQuizStarted(false);
+		loading = false;
+		return true;
+	}
+
 	onMount(async () => {
 		const { author_slug, slug } = $page.params;
 
@@ -159,10 +238,54 @@
 			console.error('Missing route parameters');
 		}
 
+		isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+		if (typeof window !== 'undefined') {
+			window.addEventListener('online', () => {
+				isOnline = true;
+				offlineError = '';
+			});
+			window.addEventListener('offline', () => {
+				isOnline = false;
+				offlineError = 'You are offline. Showing saved quiz data if available.';
+			});
+		}
+
+		if (!isOnline) {
+			const loaded = await loadSavedQuiz(author_slug, slug);
+			if (loaded) {
+				return;
+			}
+			loading = false;
+			offlineError = 'This quiz has not been saved for offline use yet. Open it while online and save it first.';
+			return;
+		}
+
 		quiz.setCollectionId(collectionId);
-		quiz.loadCards(collectionId);
+		try {
+			const loadedCards = await quiz.loadCards(collectionId);
+			await saveQuiz(collectionId, loadedCards, {
+				author,
+				category,
+				thumbnail,
+				quizScore,
+				timesPlayed,
+				meta
+			});
+			await saveQuizImages(loadedCards);
+		} catch (error) {
+			console.warn('Online quiz load failed, attempting offline cache:', error);
+			const loaded = await loadSavedQuiz(author_slug, slug);
+			if (!loaded) {
+				loading = false;
+				offlineError = 'Unable to load the quiz online and no offline copy is available.';
+			}
+		}
+
 		quiz.setQuizStarted(false);
-		quiz.setCanEditCollection(await refreshEditPermission());
+
+		if (navigator.onLine) {
+			quiz.setCanEditCollection(await refreshEditPermission());
+		}
 
 		if (typeof window !== 'undefined') {
 			history.pushState(null, '', window.location.href);
@@ -236,8 +359,11 @@
 	{#if !state.quizStarted}
 		<div class="white padding rounded m-3">
 			<QuizHeader collectionName={category} {author} authorSlug={slugify(author)} {thumbnail} />
+			{#if offlineError}
+				<div class="alert alert-warning">{offlineError}</div>
+			{/if}
 			{#if timesPlayed > 0}<h3 class="mb-3">Times Played: {timesPlayed}</h3>{/if}
-			{#if !state.quizStarted && !cards}
+			{#if !state.quizStarted && cards.length === 0}
 				{#if data?.status === 400}
 					<h2 class="mb-3">Invalid URL</h2>
 					<div class="alert alert-warning">
@@ -268,10 +394,28 @@
 					on:click={() => startQuiz(false)}>Go</button
 				>
 				<button
-					class="btn btn-outline-secondary"
+					class="btn btn-outline-secondary me-2"
 					style="width: auto; padding: 0 2rem;"
 					on:click={() => startQuiz(true)}>Practice</button
 				>
+				<button class="btn btn-outline-secondary"
+				style="width: auto; padding: 0 rem;" on:click={() => saveQuizToCache()}>Save for offline</button>
+
+				{#if isSavingOffline}
+					<div class="mt-3">
+						<div class="progress" style="height: 0.75rem;">
+							<div
+								class="progress-bar progress-bar-striped progress-bar-animated"
+								role="progressbar"
+								style="width: {saveProgressTotal ? Math.round((saveProgress / saveProgressTotal) * 100) : 100}%"
+								aria-valuenow={saveProgress}
+								aria-valuemin="0"
+								aria-valuemax={saveProgressTotal || 100}>
+							</div>
+						</div>
+						<div class="text-muted small mt-2">{saveProgressMessage}</div>
+					</div>
+				{/if}
 			{/if}
 		</div>
 	{:else}

@@ -106,7 +106,7 @@ function createQuizStore() {
             }),
 
         loadCards: async (collectionId) => {
-            if (!collectionId) return;
+            if (!collectionId) return [];
 
             patch({ isLoading: true, collectionId });
 
@@ -116,6 +116,7 @@ function createQuizStore() {
             console.log("Updated cards from loadCards:", cards);
 
             patch({ cards, isLoading: false });
+            return cards;
         },
 
         loadCollection: async (collectionId) => {
