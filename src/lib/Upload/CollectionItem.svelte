@@ -18,6 +18,7 @@
 	import { addToast } from '../../store/toast.js';
 	import { user } from '../../store/user.js';
 	import { quiz } from '../../store/quiz';
+	import { stringify } from 'uuid';
 	export let item;
 	export let index;
 	export let editableItemId;
@@ -488,7 +489,7 @@
 						<img class="preview" src={item.thumbnail} alt="Preview" />
 					{:else if item.audio}
 					<img src={`https://img.youtube.com/vi/${item.audio}/default.jpg`} alt="Preview" />
-					{:else}
+					{:else if item.url || item.image || item.thumbnail}
 					<img class="preview" src={item.url || item.image || item.thumbnail} alt="Preview" />
 					{/if}
 					{#if item.audio != null}

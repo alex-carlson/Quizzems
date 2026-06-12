@@ -221,6 +221,7 @@
 				tempCollaborators = [];
 				addToast({ type: 'error', message: 'Failed to load collaborators.' });
 			}
+			isPublic = !collection.private;
 		}
 	});
 
