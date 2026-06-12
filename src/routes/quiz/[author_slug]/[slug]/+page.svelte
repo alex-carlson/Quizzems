@@ -267,7 +267,6 @@
 		savedQuiz.cards = await hydrateQuizImages(savedQuiz.cards);
 		offlineError = '';
 		quiz.setCards(savedQuiz.cards);
-		quiz.setQuizStarted(false);
 		loading = false;
 		return true;
 	}
@@ -323,8 +322,6 @@
 				offlineError = 'Unable to load the quiz online and no offline copy is available.';
 			}
 		}
-
-		quiz.setQuizStarted(false);
 
 		if (navigator.onLine) {
 			console.log('Checking edit permissions for quiz collection...');
