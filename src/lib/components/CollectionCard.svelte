@@ -14,6 +14,7 @@
 	import Fa from 'svelte-fa';
 
 	export let collection = null;
+	/** @type {(collection: any) => void | Promise<void> | null} */
 	export let onNavigate = null; // Optional navigation override
 	export let showTags = false;
 	export let showAuthor = false;

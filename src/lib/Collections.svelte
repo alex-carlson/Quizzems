@@ -15,6 +15,7 @@
 	import { fetchUser } from './api/user';
 	export let list = true;
 	export let grid = true;
+	export let search = false;
 	export let condensed = false;
 	export let showAuthor = false;
 	export let sortmode = 'default'; // 'default', 'latest', 'popular', 'random'
@@ -29,6 +30,12 @@
 	let hasInitialized = false;
 	let windowWidth = 0;
 	let searchTerm = '';
+	let currentPage = 1;
+	let pageSize = limit && limit > 0 ? limit : 12;
+	let totalPages = 1;
+	let paginatedCollections = [];
+	let placeholderPageIndexes = [];
+	let loadedFullCollectionList = false;
 	const dispatch = createEventDispatcher();
 
 	async function selectCollection(collection) {
@@ -91,9 +98,11 @@
 
 		try {
 			let data;
+			const needsFullFetch = searchTerm.trim().length > 0 || sortmode === 'default';
 
-			if (limit === null || limit === -1) {
+			if (limit === null || limit === -1 || needsFullFetch) {
 				data = await fetchCollections();
+				loadedFullCollectionList = true;
 			} else {
 				switch (sortmode) {
 					case 'latest':
@@ -105,10 +114,11 @@
 					case 'random':
 						data = await fetchRandomCollections(limit || 10);
 						break;
-					case 'random-daily':
+					case 'random-daily': {
 						const daily = await fetchRandomCollections(limit || 1, true); // Daily random
 						data = daily ? [daily] : [];
 						break;
+					}
 					default:
 						data = await fetchLatestCollections(limit || 12);
 						break;
@@ -143,14 +153,7 @@
 
 		// Use passed collections or fetched collections
 		const sourceCollections = collections.length > 0 ? collections : fetchedCollections;
-		let sorted = [...sourceCollections];
-
-		// Apply limit only if not already limited by API
-		if (limit && limit > 0 && sorted.length > limit) {
-			sorted = sorted.slice(0, limit);
-		}
-
-		return sorted;
+		return [...sourceCollections];
 	})();
 
 	$: filteredCollections = processedCollections.filter((c) => {
@@ -173,6 +176,12 @@
 		if (list) classes.push('list');
 		return classes.join(' ');
 	})();
+
+	$: pageSize = limit && limit > 0 ? limit : 12;
+	$: placeholderPageIndexes = Array.from({ length: pageSize }, (_, i) => i);
+	$: totalPages = Math.max(1, Math.ceil(filteredCollections.length / pageSize));
+	$: if (currentPage > totalPages) currentPage = totalPages;
+	$: paginatedCollections = filteredCollections.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 </script>
 
 <div class="collections-container {layoutClass} {sortmode}">
@@ -185,19 +194,26 @@
 			{isCollapsed ? 'Show Collections' : 'Hide Collections'}
 		</button>
 	{/if}
-	<!-- if !isCollapsed add input -->
-	{#if !isCollapsed && condensed}
-		<input
-			class="search-bar mb-2"
-			type="text"
-			placeholder="Search collections..."
-			bind:value={searchTerm}
-		/>
-	{/if}
 	{#if !condensed || !isCollapsed}
+		{#if search}
+			<div class="search-bar-wrapper mb-2 flex">
+				<input
+					class="search-bar w-full"
+					type="text"
+					placeholder="Search collections..."
+					bind:value={searchTerm}
+					on:input={() => {
+						currentPage = 1;
+						if (searchTerm.trim().length > 0 && collections.length === 0 && !loadedFullCollectionList && !isLoading) {
+							loadCollections();
+						}
+					}}
+				/>
+			</div>
+		{/if}
 		{#if isLoading || (!hasInitialized && collections.length === 0)}
 			<ul class="collections-list {grid ? 'grid' : list ? 'list' : ''}">
-				{#each Array(limit && limit > 0 ? limit : 12) as _, i}
+				{#each placeholderPageIndexes as placeholderIndex (placeholderIndex)}
 					<CollectionCard />
 				{/each}
 			</ul>
@@ -212,7 +228,7 @@
 			</div>
 		{:else}
 			<ul class="collections-list">
-				{#each filteredCollections as collection}
+				{#each paginatedCollections as collection (collection.id)}
 					<CollectionCard
 						{collection}
 						onNavigate={selectCollection}
@@ -223,6 +239,27 @@
 					/>
 				{/each}
 			</ul>
+			{#if totalPages > 1}
+				<div class="pagination-controls mt-3">
+					<button
+						type="button"
+						class="btn btn-sm btn-outline-primary"
+						on:click={() => (currentPage = Math.max(1, currentPage - 1))}
+						disabled={currentPage === 1}
+					>
+						Previous
+					</button>
+					<span class="pagination-status mx-2">Page {currentPage} of {totalPages}</span>
+					<button
+						type="button"
+						class="btn btn-sm btn-outline-primary"
+						on:click={() => (currentPage = Math.min(totalPages, currentPage + 1))}
+						disabled={currentPage === totalPages}
+					>
+						Next
+					</button>
+				</div>
+			{/if}
 		{/if}
 		{#if sortmode === 'random' && (!condensed || !isCollapsed)}
 			<div class="shuffle-container mt-2">
@@ -325,6 +362,19 @@
 		background: #0056b3;
 	}
 
+	.pagination-controls {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.75rem;
+		margin-top: 1rem;
+	}
+
+	.pagination-status {
+		font-size: 0.95rem;
+		color: #343a40;
+	}
+
 	.shuffle-container {
 		display: flex;
 		justify-content: center;
@@ -369,6 +419,30 @@
 			gap: 0.5rem;
 			padding: 0.5rem 0;
 		}
+	}
+
+	.search-bar-wrapper {
+		display: flex;
+		justify-content: flex-start;
+		margin-bottom: 1rem;
+	}
+
+	.search-bar {
+		width: 100%;
+		max-width: 600px;
+		padding: 0.75rem 1rem;
+		border: 1px solid #ced4da;
+		border-radius: 0.5rem;
+		font-size: 1rem;
+		background: white;
+		color: #333;
+		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	.search-bar:focus {
+		outline: none;
+		border-color: #80bdff;
+		box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 	}
 
 	.placeholder {

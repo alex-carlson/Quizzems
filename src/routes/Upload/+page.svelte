@@ -150,6 +150,7 @@
 				<Collections
 					collections={$quiz.userCollections || []}
 					grid
+					search={true}
 					onSelectCollection={(e) => quiz.loadCollection(e.id)}
 				/>
 			{/if}

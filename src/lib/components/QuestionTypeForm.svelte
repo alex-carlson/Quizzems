@@ -126,7 +126,10 @@
 		const audioItem = {
 			...item,
 			questionType: QuestionType.AUDIO,
-			answerType: item.answerType || AnswerType.SINGLE
+			answerType: item.answerType || AnswerType.SINGLE,
+			category: item.category || $quiz.collection?.category || '',
+			author: item.author || $user?.username,
+			author_id: item.author_id || $user?.public_id
 		};
 		const newItems = await quiz.uploadAudio(audioItem);
 		if (newItems && Array.isArray(newItems) && newItems.length > 0 && newItems[0]?.items) {

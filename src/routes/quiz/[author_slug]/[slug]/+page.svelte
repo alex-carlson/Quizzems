@@ -327,6 +327,7 @@
 		quiz.setQuizStarted(false);
 
 		if (navigator.onLine) {
+			console.log('Checking edit permissions for quiz collection...');
 			quiz.setCanEditCollection(await refreshEditPermission());
 		}
 

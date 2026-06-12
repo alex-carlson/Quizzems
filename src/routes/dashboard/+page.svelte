@@ -101,7 +101,7 @@
 								{#each savedQuizzes as quiz (quiz.id)}
 									<div class="list-group-item d-flex justify-content-between align-items-center">
 										<div>
-											<h5 class="mb-1">{quiz.metadata?.category || quiz.metadata?.meta?.title || quiz.metadata?.title || 'Untitled Quiz'}</h5>
+											<h5 class="mb-1"><a href={quiz.metadata?.meta?.url || '#'}>{quiz.metadata?.category || quiz.metadata?.meta?.title || quiz.metadata?.title || 'Untitled Quiz'}</a></h5>
 											<small class="text-muted">
 												{quiz.metadata?.description || ''}
 												<br />
