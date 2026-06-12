@@ -39,9 +39,7 @@
 	const dispatch = createEventDispatcher();
 
 	async function selectCollection(collection) {
-		if (condensed) {
-			isCollapsed = true;
-		}
+		isCollapsed = true;
 
 		if (onSelectCollection) {
 			onSelectCollection(collection);

@@ -151,7 +151,10 @@
 					collections={$quiz.userCollections || []}
 					grid
 					search={true}
-					onSelectCollection={(e) => quiz.loadCollection(e.id)}
+					onSelectCollection={(e) => {
+						quiz.loadCollection(e.id);
+						showCollections = false;
+					}}
 				/>
 			{/if}
 		</div>

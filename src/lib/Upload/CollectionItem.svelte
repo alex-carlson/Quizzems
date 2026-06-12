@@ -488,8 +488,8 @@
 						<img class="preview" src={item.url || item.image} alt="Preview" />
 					{:else if item.audio != null}
 						<div class="audio">
-							<img src={`https://img.youtube.com/vi/${item.url}/default.jpg`} alt={item.answer} />
-							<p>{item.yt_title}</p>
+							<img src={`https://img.youtube.com/vi/${item.audio}/default.jpg`} alt={item.answer} />
+							<p>{item.title}</p>
 						</div>
 					{:else}
 						<span class="question">{item.question}</span>
