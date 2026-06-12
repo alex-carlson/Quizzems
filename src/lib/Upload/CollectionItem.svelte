@@ -488,6 +488,8 @@
 						<img class="preview" src={item.thumbnail} alt="Preview" />
 					{:else if item.audio}
 					<img src={`https://img.youtube.com/vi/${item.audio}/default.jpg`} alt="Preview" />
+					{:else}
+					<img class="preview" src={item.url || item.image || item.thumbnail} alt="Preview" />
 					{/if}
 					{#if item.audio != null}
 						<div class="audio">
