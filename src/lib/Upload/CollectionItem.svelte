@@ -484,12 +484,14 @@
 		<div class="item-display d-flex gap-3 h-100">
 			<div class="content-section flex-half d-flex flex-column">
 				<div class="media-content">
-					{#if item.image || item.url}
-						<img class="preview" src={item.url || item.image} alt="Preview" />
-					{:else if item.audio != null}
+					{#if item.thumbnail}
+						<img class="preview" src={item.thumbnail} alt="Preview" />
+					{:else if item.audio}
+					<img src={`https://img.youtube.com/vi/${item.audio}/default.jpg`} alt="Preview" />
+					{/if}
+					{#if item.audio != null}
 						<div class="audio">
-							<img src={`https://img.youtube.com/vi/${item.audio}/default.jpg`} alt={item.answer} />
-							<p>{item.title}</p>
+							<p>{item.title || item.yt_title}</p>
 						</div>
 					{:else}
 						<span class="question">{item.question}</span>

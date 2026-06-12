@@ -117,6 +117,9 @@
 			imageSuggestions = [];
 			searchTerm = '';
 			if (fileUploadComponent) fileUploadComponent.clearImage();
+			if ($quiz.collection?.id) {
+				await quiz.loadCards($quiz.collection.id);
+			}
 			setTimeout(focusQuestionInput, 100);
 		}
 	}
@@ -140,6 +143,9 @@
 			item.answers = '';
 			item.src = '';
 			item.supplemental_text = '';
+			if ($quiz.collection?.id) {
+				await quiz.loadCards($quiz.collection.id);
+			}
 			setTimeout(focusQuestionInput, 100);
 		}
 	}
@@ -171,6 +177,9 @@
 					input.value = '';
 				}
 			});
+			if ($quiz.collection?.id) {
+				await quiz.loadCards($quiz.collection.id);
+			}
 			setTimeout(focusQuestionInput, 100);
 		}
 	}
