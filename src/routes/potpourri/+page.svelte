@@ -5,6 +5,7 @@
 	import { quiz } from '$store/quiz';
 
 	let count = 5;
+	let selectedTypes = ['image', 'audio', 'question'];
 	let loading = false;
 	let error = '';
 
@@ -13,7 +14,7 @@
 		loading = true;
 
 		try {
-			const result = await fetchRandomItems(count);
+			const result = await fetchRandomItems(count, selectedTypes);
 
 			const cards = Array.isArray(result) ? result : result?.data || [];
 
@@ -39,8 +40,15 @@
 
 	<span>
 		<label for="count">How many? (1-200): </label>
-
 		<input type="number" name="count" id="count" min="1" max="200" bind:value={count} />
+
+		<label>Types:</label>
+		<div class="checkbox-group">
+			<label><input type="checkbox" bind:group={selectedTypes} value="image" /> Image</label>
+			<label><input type="checkbox" bind:group={selectedTypes} value="audio" /> Audio</label>
+			<label><input type="checkbox" bind:group={selectedTypes} value="question" /> Question</label>
+		</div>
+
 		<button on:click={getRandomItems} disabled={loading}> Get Random </button>
 	</span>
 </div>

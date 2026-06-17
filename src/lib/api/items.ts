@@ -2,8 +2,8 @@ import { apiFetch } from './fetchdata';
 
 // Fetch random items (not collections)
 
-export async function fetchRandomItems(count = 3) {
-    const result = await apiFetch(`/items/random/${count}`, 'GET', null, false, false);
+export async function fetchRandomItems(count = 3, types: string[] = ['image', 'audio', 'question']) {
+    const result = await apiFetch(`/items/random/${count}?types=${types.join(',')}`, 'GET', null, false, false);
     if (result && Array.isArray(result.data)) {
         return result.data;
     } else if (Array.isArray(result)) {
