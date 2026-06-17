@@ -161,7 +161,9 @@
 		const newItems = await quiz.uploadQuestion({
 			...item,
 			questionType: QuestionType.TEXT,
-			answerType: item.answerType || AnswerType.SINGLE
+			answerType: item.answerType || AnswerType.SINGLE,
+			category: item.category || $quiz.collection?.category || '',
+
 		});
 		if (newItems && Array.isArray(newItems) && newItems.length > 0 && newItems[0]?.items) {
 			quiz.setCards(newItems[0].items);

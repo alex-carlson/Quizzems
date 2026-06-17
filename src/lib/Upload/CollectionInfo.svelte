@@ -5,7 +5,6 @@
 	import { uploadThumbnail } from '$lib/Upload/uploader';
 	import { addToast } from '../../store/toast';
 	import { apiFetch } from '$lib/api/fetchdata';
-	import { onMount } from 'svelte';
 	import { fetchCollaborators } from '$lib/api/user';
 	import { user } from '$store/user';
 	import { get } from 'svelte/store';
@@ -133,6 +132,26 @@
 	let collaboratorSearch = '';
 	let collaboratorResults = [];
 	let searchingCollaborators = false;
+	let currentCollectionId = null;
+
+	async function loadCollaborators(collectionId) {
+		try {
+			const result = await fetchCollaborators(collectionId);
+			tempCollaborators = Array.isArray(result.data) ? result.data : [];
+		} catch (error) {
+			tempCollaborators = [];
+			addToast({ type: 'error', message: 'Failed to load collaborators.' });
+		}
+	}
+
+	$: if (collection?.id && collection.id !== currentCollectionId) {
+		currentCollectionId = collection.id;
+		tempCategory = collection.category || '';
+		tempDescription = collection.description || '';
+		tempTags = collection.tags || '';
+		isPublic = !collection.private;
+		loadCollaborators(collection.id);
+	}
 
 	async function searchCollaborators() {
 		const query = collaboratorSearch.trim();
@@ -211,19 +230,6 @@
 
 		collaboratorResults = [];
 	}
-
-	onMount(async () => {
-		if (collection && collection.id) {
-			try {
-				const result = await fetchCollaborators(collection.id);
-				tempCollaborators = Array.isArray(result.data) ? result.data : [];
-			} catch (error) {
-				tempCollaborators = [];
-				addToast({ type: 'error', message: 'Failed to load collaborators.' });
-			}
-			isPublic = !collection.private;
-		}
-	});
 
 	// Dispatch changes to parent
 	$: dispatch('categoryChanged', tempCategory);
