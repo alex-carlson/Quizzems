@@ -299,6 +299,10 @@
 			{/if}
 		</div>
 	{:else}
+		{#if item.audio}
+			<img src={`https://img.youtube.com/vi/${item.audio}/default.jpg`} alt="Answer image" class="img-fluid mb-2" />
+			<span>{item.yt_title}</span>
+		{/if}
 		<span class={item.isCorrect ? 'answer correct' : 'answer incorrect'}>
 			{#if item.num_required > 1}
 				{item.answer.join(', ')}

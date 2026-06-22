@@ -93,12 +93,6 @@
 		addToast({ type: 'success', message: 'Collection deleted successfully!' });
 	}
 
-	function debugQuiz() {
-		console.log('QUIZ STATE:', get(quiz));
-	}
-
-	debugQuiz();
-
 	async function fetchRecommendedTags(data) {
 		try {
 			const res = await apiFetch('/collections/tags/recommended', 'POST', { query: data });

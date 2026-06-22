@@ -82,11 +82,11 @@
 			<h3>{item.collection_name}</h3>
 		{/if}
 
-		{#if item.type === 'audio'}
+		{#if item.type === 'audio' || item.audio}
 			<YoutubeAudioPlayer id={item.id} videoId={item.audio} bind:this={playerRef} />
 		{/if}
 
-		{#if item.url}
+		{#if item.url && item.type !== 'audio' && item.url != item.audio}
 			<LazyLoadImage imageUrl={item.url} />
 		{/if}
 

@@ -508,22 +508,22 @@
 			</div>
 			<div class="answer-section flex-half d-flex flex-column">
 				<div class="answer-display">
-					{#if item.answerType === AnswerType.SINGLE || !isValidAnswerType(item.answer_type)}
-					<span class="answer-text">{item.answer}</span>
+					{#if item.answerType === AnswerType.SINGLE || !isValidAnswerType(item.answerType)}
+						<span class="answer-text">{item.answer}</span>
 					{:else if item.answerType === AnswerType.MULTIPLE_CHOICE}
-					<small class="text-muted mb-2">Multiple Choice:</small>
-					{#each item.answer || [] as answer, index (index)}
-					<span class="answer-option" class:correct={item.correctAnswerIndex === index}>
-						{index + 1}. {answer}
-						{#if item.correctAnswerIndex === index}✓{/if}
-					</span>
-					{/each}
+						<small class="text-muted mb-2">Multiple Choice:</small>
+						{#each item.answer || [] as answer, index (index)}
+						<span class="answer-option" class:correct={item.correctAnswerIndex === index}>
+							{index + 1}. {answer}
+							{#if item.correctAnswerIndex === index}✓{/if}
+						</span>
+						{/each}
 					{:else}
 						<small class="text-muted mb-2">
 							Multi-Answer (Required: {item.num_required || normalizeAnswers(item.answer).length}):
 						</small>
 
-						{#each normalizeAnswers(item.answer) as a, index (index)}
+						{#each normalizeAnswers(item.answers) as a, index (index)}
 							<span class="answer-option">{index + 1}. {a}</span>
 						{/each}
 					{/if}
