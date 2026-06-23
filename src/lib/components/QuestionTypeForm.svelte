@@ -165,20 +165,20 @@
 			category: item.category || $quiz.collection?.category || '',
 
 		});
+
 		if (newItems && Array.isArray(newItems) && newItems.length > 0 && newItems[0]?.items) {
 			quiz.setCards(newItems[0].items);
 			addToast({ type: 'success', message: 'Question added successfully!' });
-			item.question = '';
-			item.answer = '';
-			item.answers = '';
-			item.src = '';
-			item.supplemental_text = '';
-			const inputs = document.querySelectorAll('input, textarea');
-			inputs.forEach((input) => {
-				if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
-					input.value = '';
-				}
-			});
+
+			item = {
+				...item,
+				question: '',
+				answer: '',
+				answers: '',
+				src: '',
+				supplemental_text: ''
+			};
+
 			if ($quiz.collection?.id) {
 				await quiz.loadCards($quiz.collection.id);
 			}

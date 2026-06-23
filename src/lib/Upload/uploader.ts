@@ -154,7 +154,6 @@ export async function uploadData(item, uuid = uuidv4(), forceJpg = false) {
 
     // If file is a URL (string), call /upload-url
     if (typeof item.file === 'string') {
-        console.log("Item:", item);
         return handleUpload(async () => {
             const data = addUserAuthToData({
                 uuid,
@@ -261,7 +260,10 @@ export async function uploadQuestion(data) {
         const questionData = addUserAuthToData({
             uuid: uuidv4(),
             question: data.question,
-            answer: data.answers ?? data.answer,
+            answer:
+            Array.isArray(data.answers)
+                ? data.answers
+                : data.answer,
             category: data.category,
             type: data.type,
             questionType: data.questionType || 'text',

@@ -109,6 +109,11 @@
 	function addAnswer() {
 		item.answers = [...item.answers, ''];
 	}
+
+	function updateAnswer(value) {
+		item.answer = value;
+		item = { ...item };
+	}
 </script>
 
 <div class="form-group white">
@@ -129,11 +134,16 @@
 	{#if answerMode === 'single'}
 		<div class="single-answer-container">
 			<input
-				id="{idPrefix}-0"
-				type="text"
 				class="form-control"
-				bind:value={item.answer}
+				value={item.answer}
+				type="text"
 				placeholder="Enter the answer"
+				on:input={(e) => {
+					item = {
+						...item,
+						answer: e.currentTarget.value
+					};
+				}}
 			/>
 		</div>
 	{:else if answerMode === 'multiple-choice'}

@@ -226,7 +226,7 @@
 			</div>
 		{:else}
 			<ul class="collections-list">
-				{#each paginatedCollections as collection (collection.id)}
+				{#each paginatedCollections as collection, index (collection.id ?? index)}
 					<CollectionCard
 						{collection}
 						onNavigate={selectCollection}

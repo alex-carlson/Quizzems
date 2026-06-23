@@ -19,7 +19,6 @@
 	import { Fa } from 'svelte-fa';
 	import { faSort, faCheck, faDownload, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 	import { onMount } from 'svelte';
-	import { get } from 'svelte/store';
 
 	let editableItemId = null;
 	let isReordering = false;
@@ -29,45 +28,48 @@
 	let tempDescription = '';
 	let tempTags = '';
 	let suggestedTags = [];
-	let channel;
-	let skipNextCollectionSync = false;
 	let autoOpenedCollectionId = null;
 	let tagDebounceTimeout;
 	let lastUserId;
 	let showCollections = true;
 	let questionType = 'Image';
+	let cardsChannel;
+	let activeCollectionId;
 
-	onMount(() => {
-		if ($user?.public_id) {
-			quiz.loadUserCollections($user.public_id);
+	$: {
+	  const id = $quiz.collection?.id;
+
+	  if (id && id !== activeCollectionId) {
+		activeCollectionId = id;
+
+		if (cardsChannel) {
+		  supabase.removeChannel(cardsChannel);
 		}
 
-		channel = supabase
-			.channel('collections-realtime')
-			.on(
-				'postgres_changes',
-				{ event: '*', schema: 'public', table: 'collections' },
-				(payload) => {
-					if ($quiz.collection?.id) {
-						if (
-							payload.new?.id === $quiz.collection.id ||
-							payload.old?.id === $quiz.collection.id
-						) {
-							if (!skipNextCollectionSync) {
-								quiz.loadCollection($quiz.collection.id);
-							} else {
-								skipNextCollectionSync = false;
-							}
-						}
-					}
-					quiz.loadUserCollections($user.public_id);
-				}
-			)
-			.subscribe();
+		cardsChannel = supabase
+		  .channel(`cards-${id}`)
+		  .on(
+			'postgres_changes',
+			{
+			  event: '*',
+			  schema: 'public',
+			  table: 'cards',
+			  filter: `collection=eq.${id}`
+			},
+			async () => {
+			  quiz.loadCards(id);
+			}
+		  )
+		  .subscribe();
+	  }
+	}
 
-		return () => {
-			if (channel) supabase.removeChannel(channel);
-		};
+	onMount(() => {
+	  return () => {
+		if (cardsChannel) {
+		  supabase.removeChannel(cardsChannel);
+		}
+	  };
 	});
 
 	$: if ($user?.public_id && $user.public_id !== lastUserId) {
@@ -180,10 +182,10 @@
 
 			<div class="card mb-4">
 				<div class="card-header">
-					Questions ({$quiz.collection.items?.length || 0})
+					Questions ({$quiz.cards?.length || 0})
 				</div>
 				<ul class="list-group">
-					{#each $quiz.collection.items as item, index (item.id)}
+					{#each $quiz.cards as item, index (item.id)}
 						<CollectionItem
 							{item}
 							{index}

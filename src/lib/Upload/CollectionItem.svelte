@@ -388,7 +388,6 @@
 		return true;
 	}
 </script>
-
 <li
 	class="d-flex {isReordering ? 'item reorder' : 'item'} {isDragging ? 'dragging' : ''}"
 	draggable={isReordering}
