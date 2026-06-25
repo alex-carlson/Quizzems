@@ -98,7 +98,11 @@
 				if (append) {
 					suggestions = [...suggestions, ...newItems];
 				} else {
-					suggestions = newItems;
+					suggestions = newItems;		
+					let resultsList = document.getElementById('resultsList');
+					if (resultsList) {
+						resultsList.scrollTop = 0; // Scroll to top for new search
+					}
 				}
 
 				// Update pagination
@@ -184,7 +188,7 @@
 			<h6 class="mt-2">Showing results for {effectiveSearchTerm}</h6>
 		{/if}
 	</div>
-	<div class="scroll-wrapper">
+	<div class="scroll-wrapper" id="resultsList">
 		<div class="suggestions-list">
 			{#each suggestions as suggestion, originalIndex}
 				<div class="suggestion-item">

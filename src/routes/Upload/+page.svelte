@@ -204,7 +204,6 @@
 							}}
 							on:updateItem={(e) => {
 								quiz.updateCardById(e.detail.id, e.detail);
-								skipNextCollectionSync = true;
 							}}
 							on:reorderItem={async (e) => {
 								await reorderItems(
