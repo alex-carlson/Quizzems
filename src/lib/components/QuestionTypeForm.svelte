@@ -48,8 +48,8 @@
 	}
 
 	// Focus function for question input
-	function focusQuestionInput() {
-		const questionInput = document.getElementById('question-input-question');
+	function focusQuestionInput(elementName) {
+		const questionInput = document.getElementById(elementName);
 		if (questionInput) {
 			questionInput.focus();
 			questionInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -120,7 +120,7 @@
 			if ($quiz.collection?.id) {
 				await quiz.loadCards($quiz.collection.id);
 			}
-			setTimeout(focusQuestionInput, 100);
+			setTimeout(() => focusQuestionInput('image-answer-input'), 100);
 		}
 	}
 
@@ -146,7 +146,7 @@
 			if ($quiz.collection?.id) {
 				await quiz.loadCards($quiz.collection.id);
 			}
-			setTimeout(focusQuestionInput, 100);
+			setTimeout(() => focusQuestionInput('youtube-search-input'), 100);
 		}
 	}
 
@@ -182,7 +182,7 @@
 			if ($quiz.collection?.id) {
 				await quiz.loadCards($quiz.collection.id);
 			}
-			setTimeout(focusQuestionInput, 100);
+			setTimeout(() => focusQuestionInput('question-input-question'), 100);
 		}
 	}
 </script>

@@ -134,6 +134,7 @@
 	{#if answerMode === 'single'}
 		<div class="single-answer-container">
 			<input
+				id="image-answer-input"
 				class="form-control"
 				value={item.answer}
 				type="text"

@@ -90,6 +90,7 @@
 			</button>
 		{/if}
 		<input
+			id="youtube-search-input"
 			type="text"
 			bind:value={searchTerm}
 			placeholder="e.g. Prince"
