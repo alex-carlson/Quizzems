@@ -1,6 +1,6 @@
 <script>
 	import { user } from '$store/user';
-	import { quiz } from '$store/quiz';
+	import { quiz, sortedCards } from '$store/quiz';
 	import Collections from '$lib/Collections.svelte';
 	import CollectionItem from '$lib/Upload/CollectionItem.svelte';
 	import CollectionInfo from '$lib/Upload/CollectionInfo.svelte';
@@ -185,7 +185,7 @@
 					Questions ({$quiz.cards?.length || 0})
 				</div>
 				<ul class="list-group">
-					{#each $quiz.cards as item, index(`${item.date_added ?? ''}-${item.id}`)}
+					{#each $sortedCards as item, index (item.id)}
 						<CollectionItem
 							{item}
 							{index}

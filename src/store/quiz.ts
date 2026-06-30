@@ -1,5 +1,5 @@
 import { uploadData as uploaderUploadData, uploadAudio as uploaderUploadAudio, uploadQuestion as uploaderUploadQuestion } from '$lib/Upload/uploader';
-import { writable } from 'svelte/store';
+import { writable, derived } from 'svelte/store';
 import { fetchCollectionItems } from '$lib/api/items';
 import { fetchCollectionById } from '$lib/api/collections';
 
@@ -187,3 +187,11 @@ function createQuizStore() {
 }
 
 export const quiz = createQuizStore();
+
+export const sortedCards = derived(quiz, ($quiz) => {
+    return [...($quiz.cards ?? [])].sort(
+        (a, b) =>
+            new Date(a.date_added ?? 0).getTime() -
+            new Date(b.date_added ?? 0).getTime()
+    );
+});
