@@ -107,6 +107,7 @@
 								<Fa icon={collection.private ? faEyeSlash : faEye} size="xs" />
 							</span>
 						{/if}
+						<span>#{collection.id}</span>
 					</div>
 				</div>
 			</div>
@@ -169,6 +170,7 @@
 								>by {collection.profiles.username || collection.profiles.public_id}</span
 							>
 						{/if}
+						<span>#{collection.id}</span>	
 					</div>
 				</div>
 			</div>
