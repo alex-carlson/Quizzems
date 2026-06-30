@@ -31,7 +31,7 @@
 	let autoOpenedCollectionId = null;
 	let tagDebounceTimeout;
 	let lastUserId;
-	let showCollections = true;
+	let showCollections = false;
 	let questionType = 'Image';
 	let cardsChannel;
 	let activeCollectionId;
@@ -155,22 +155,21 @@
 			{/if}
 		</div>
 
-		{#if !$quiz.collection}
-			<div>
-				<h2>Create a new Quiz</h2>
-				<input bind:value={tempCategory} class="form-control mb-2" />
-				<button
-					class="btn btn-primary"
-					on:click={async () => {
-						const res = await createCollection(tempCategory);
-						const col = Array.isArray(res) ? res[0] : res;
-						if (col?.id) await quiz.loadCollection(col.id);
-					}}
-				>
-					Create
-				</button>
-			</div>
-		{:else}
+		<div>
+			<h2>or create a new Quiz</h2>
+			<input bind:value={tempCategory} class="form-control mb-2" />
+			<button
+				class="btn btn-primary"
+				on:click={async () => {
+					const res = await createCollection(tempCategory);
+					const col = Array.isArray(res) ? res[0] : res;
+					if (col?.id) await quiz.loadCollection(col.id);
+				}}
+			>
+				Create
+			</button>
+		</div>
+		{#if $quiz.collection}
 			<CollectionInfo
 				collection={$quiz.collection}
 				bind:tempCategory
