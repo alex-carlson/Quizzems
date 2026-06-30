@@ -104,15 +104,9 @@
 			<input
 				id="image-answer-input"
 				class="form-control"
-				value={item.answer}
+				bind:value={item.answer}
 				type="text"
 				placeholder="Enter the answer"
-				on:input={(e) => {
-					item = {
-						...item,
-						answer: e.currentTarget.value
-					};
-				}}
 			/>
 		</div>
 	{:else if item.answer_type === 'multiple-choice'}
