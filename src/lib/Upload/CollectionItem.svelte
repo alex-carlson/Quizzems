@@ -129,7 +129,7 @@
 			if (
 				item.answers !== undefined &&
 				item.answers !== null &&
-				item.answerType !== AnswerType.SINGLE
+				item.answer_type !== AnswerType.SINGLE
 			) {
 				editData.answers = item.answers;
 			}
@@ -171,8 +171,9 @@
 				}
 			}
 
-			if (item.answerType !== undefined && item.answerType !== null && item.answerType !== '') {
-				editData.answerType = item.answerType;
+			if (item.answer_type !== undefined && item.answer_type !== null && item.answer_type !== '') {
+				editData.answer_type = item.answer_type;
+				editData.answerType = item.answer_type ?? item.answerType;
 			} else {
 				if (item.answers) {
 					if (item.correctAnswerIndex !== undefined && item.correctAnswerIndex !== null) {
@@ -254,7 +255,7 @@
 				isUpdate: true,
 				// Include type information
 				questionType: item.questionType || QuestionType.IMAGE,
-				answerType: item.answerType || AnswerType.SINGLE
+				answerType: item.answer_type || AnswerType.SINGLE
 			};
 
 			console.log('Uploading data', tempItem);
@@ -507,9 +508,9 @@
 			</div>
 			<div class="answer-section flex-half d-flex flex-column">
 				<div class="answer-display">
-					{#if item.answerType === AnswerType.SINGLE || !isValidAnswerType(item.answerType)}
+					{#if item.answer_type === AnswerType.SINGLE}
 						<span class="answer-text">{item.answer}</span>
-					{:else if item.answerType === AnswerType.MULTIPLE_CHOICE}
+					{:else if item.answer_type === AnswerType.MULTIPLE_CHOICE}
 						<small class="text-muted mb-2">Multiple Choice:</small>
 						{#each item.answer || [] as answer, index (index)}
 						<span class="answer-option" class:correct={item.correctAnswerIndex === index}>
@@ -522,7 +523,7 @@
 							Multi-Answer (Required: {item.num_required || normalizeAnswers(item.answer).length}):
 						</small>
 
-						{#each normalizeAnswers(item.answers) as a, index (index)}
+						{#each normalizeAnswers(item.answer) as a, index (index)}
 							<span class="answer-option">{index + 1}. {a}</span>
 						{/each}
 					{/if}

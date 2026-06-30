@@ -185,7 +185,7 @@
 					Questions ({$quiz.cards?.length || 0})
 				</div>
 				<ul class="list-group">
-					{#each $quiz.cards as item, index (item.id)}
+					{#each $quiz.cards as item, index (item.date_added)}
 						<CollectionItem
 							{item}
 							{index}

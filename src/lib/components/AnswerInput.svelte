@@ -7,28 +7,6 @@
 	export let idPrefix = 'answer';
 	export let label = 'Answer:';
 
-	// Answer mode options
-	let answerMode = 'single'; // 'single', 'multiple-choice', 'multi-answer'
-
-	// Initialize answer mode based on current item state
-	$: {
-		if (item.answerType === AnswerType.MULTIPLE_CHOICE) {
-			answerMode = 'multiple-choice';
-		} else if (item.answerType === AnswerType.MULTI_ANSWER) {
-			answerMode = 'multi-answer';
-		} else {
-			answerMode = 'single';
-		}
-	}
-
-	// Defensive: ensure item.answers is always an array in MC/multi mode
-	$: if (
-		(answerMode === 'multiple-choice' || answerMode === 'multi-answer') &&
-		!Array.isArray(item.answers)
-	) {
-		item.answers = [item.answer || '', ''];
-	}
-
 	function normalizeToArray(answer) {
 		if (Array.isArray(answer)) {
 			return answer.map((a) => String(a).trim()).filter(Boolean);
@@ -47,10 +25,9 @@
 		// ensure we always have a usable array
 		const arr = base.length ? base : [];
 
-		switch (answerMode) {
+		switch (item.answer_type) {
 			case 'single': {
 				item.answer = arr[0] ?? '';
-				delete item.answers;
 				delete item.isMultipleChoice;
 				delete item.numRequired;
 				item.answerType = AnswerType.SINGLE;
@@ -58,24 +35,22 @@
 			}
 
 			case 'multiple-choice': {
-				item.answers = arr.length ? arr : ['', ''];
-				item.answer = item.answers;
+				item.answer = arr.length ? arr : ['', ''];
 				item.isMultipleChoice = true;
 				item.numRequired = 1;
-				item.answerType = AnswerType.MULTIPLE_CHOICE;
+				item.answerType = 'multiple-choice';
 				break;
 			}
 
 			case 'multi-answer': {
-				item.answers = arr.length ? arr : ['', ''];
-				item.answer = item.answers;
+				item.answer = arr.length ? arr : ['', ''];
 				delete item.isMultipleChoice;
 
 				if (!item.numRequired) {
-					item.numRequired = item.answers.length;
+					item.numRequired = 1;
 				}
 
-				item.answerType = AnswerType.MULTI_ANSWER;
+				item.answerType = 'multi-answer';
 				break;
 			}
 		}
@@ -83,36 +58,29 @@
 
 	// Remove answer function for multi-answer support
 	function removeAnswer(index) {
-		if (item.answers && item.answers.length > 1) {
-			item.answers = item.answers.filter((_, i) => i !== index);
+		if (item.answer && item.answer.length > 1) {
+			item.answer = item.answer.filter((_, i) => i !== index);
 			// If we removed the correct answer in multiple choice mode, reset it
-			if (answerMode === 'multiple-choice' && item.correctAnswerIndex === index) {
+			if (item.answer_type === 'multiple-choice' && item.correctAnswerIndex === index) {
 				item.correctAnswerIndex = 0;
-			} else if (answerMode === 'multiple-choice' && item.correctAnswerIndex > index) {
+			} else if (item.answer_type === 'multiple-choice' && item.correctAnswerIndex > index) {
 				item.correctAnswerIndex--;
 			}
 
 			// If only one answer remains, convert back to single answer mode
-			if (item.answers.length === 1) {
-				item.answer = item.answers[0];
-				delete item.answers;
+			if (item.answer.length === 1) {
+				item.answer = item.answer[0];
 				delete item.isMultipleChoice;
 				delete item.numRequired;
 				delete item.correctAnswerIndex;
-				item.answerType = AnswerType.SINGLE;
-				answerMode = 'single';
+				item.answer_type = 'single';
 			}
 		}
 	}
 
 	// Function to add a new answer
 	function addAnswer() {
-		item.answers = [...item.answers, ''];
-	}
-
-	function updateAnswer(value) {
-		item.answer = value;
-		item = { ...item };
+		item.answer = [...item.answer, ''];
 	}
 </script>
 
@@ -121,7 +89,7 @@
 		<label for="{idPrefix}-0">{label}</label>
 		<select
 			class="form-select form-select-sm"
-			bind:value={answerMode}
+			bind:value={item.answer_type}
 			on:change={handleModeChange}
 			style="width: auto; min-width: 150px; background-color: white; color: #343a40;"
 		>
@@ -131,7 +99,7 @@
 		</select>
 	</div>
 
-	{#if answerMode === 'single'}
+	{#if item.answer_type === 'single'}
 		<div class="single-answer-container">
 			<input
 				id="image-answer-input"
@@ -147,14 +115,14 @@
 				}}
 			/>
 		</div>
-	{:else if answerMode === 'multiple-choice'}
+	{:else if item.answer_type === 'multiple-choice'}
 		<div class="multiple-choice-container">
 			<div class="mb-2">
 				<small class="text-muted"
 					>Enter multiple options. Mark the correct answer with a checkmark.</small
 				>
 			</div>
-			{#each item.answers as answer, index}
+			{#each item.answer as answer, index}
 				<div class="input-group mb-2">
 					<div class="input-group-text">
 						<input
@@ -173,10 +141,10 @@
 						id="{idPrefix}-{index}"
 						type="text"
 						class="form-control"
-						bind:value={item.answers[index]}
+						bind:value={item.answer[index]}
 						placeholder="Enter option {index + 1}"
 					/>
-					{#if item.answers.length > 2}
+					{#if item.answer.length > 2}
 						<button
 							type="button"
 							class="btn btn-outline-danger"
@@ -192,7 +160,7 @@
 				Add Option
 			</button>
 		</div>
-	{:else if answerMode === 'multi-answer'}
+	{:else if item.answer_type === 'multi-answer'}
 		<div class="multi-answer-container">
 			<div class="mb-2">
 				<small class="text-muted"
@@ -200,16 +168,16 @@
 					options</small
 				>
 			</div>
-			{#each item.answers as answer, index}
+			{#each item.answer as answer, index}
 				<div class="input-group mb-2">
 					<input
 						id="{idPrefix}-{index}"
 						type="text"
 						class="form-control"
-						bind:value={item.answers[index]}
+						bind:value={answer}
 						placeholder="Enter answer {index + 1}"
 					/>
-					{#if item.answers.length > 1}
+					{#if item.answer.length > 1}
 						<button
 							type="button"
 							class="btn btn-outline-danger"
@@ -222,7 +190,7 @@
 				</div>
 			{/each}
 			<div class="multi-answer-controls d-flex gap-2 align-items-center">
-				{#if item.answers.length > 1}
+				{#if item.answer.length > 1}
 					<div class="d-flex align-items-center gap-2">
 						<label for="numRequired-{idPrefix}" class="form-label mb-0">Required:</label>
 						<input
@@ -230,9 +198,9 @@
 							type="number"
 							class="form-control form-control-sm"
 							min="1"
-							max={item.answers ? item.answers.length : 1}
+							max={item.answer ? item.answer.length : 1}
 							bind:value={item.numRequired}
-							placeholder={item.answers ? String(item.answers.length) : '1'}
+							placeholder={item.answer ? String(item.answer.length) : '1'}
 							style="width: 120px;"
 						/>
 					</div>

@@ -267,7 +267,7 @@ export async function uploadQuestion(data) {
             category: data.category,
             type: data.type,
             questionType: data.questionType || 'text',
-            answerType: data.answerType || 'single',
+            answerType: data.answerType ?? data.answer_type ?? 'single',
         }, usr, data.category);
 
         if (data.numRequired != null) {
