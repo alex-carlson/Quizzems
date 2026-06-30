@@ -507,11 +507,19 @@
 				{/if}
 			</div>
 			<div class="answer-section flex-half d-flex flex-column">
+				<pre>{JSON.stringify(item, null, 2)}</pre>
+
 				<div class="answer-display">
-					{#if item.answer_type === AnswerType.SINGLE}
-						<span class="answer-text">{item.answer}</span>
-					{:else if item.answer_type === AnswerType.MULTIPLE_CHOICE}
-						<small class="text-muted mb-2">Multiple Choice:</small>
+					{#if item.answer_type === AnswerType.MULTI_ANSWER || item.answer_type === 'multi-answer'}
+					<small class="text-muted mb-2">
+						Multi-Answer (Required: {item.num_required || normalizeAnswers(item.answer).length}):
+					</small>
+					
+					{#each normalizeAnswers(item.answer) as a, index (index)}
+					<span class="answer-option">{index + 1}. {a}</span>
+					{/each}
+					{:else if item.answer_type === AnswerType.MULTIPLE_CHOICE || item.answer_type === 'multiple-choice'}
+					<small class="text-muted mb-2">Multiple Choice:</small>
 						{#each item.answer || [] as answer, index (index)}
 						<span class="answer-option" class:correct={item.correctAnswerIndex === index}>
 							{index + 1}. {answer}
@@ -519,13 +527,7 @@
 						</span>
 						{/each}
 					{:else}
-						<small class="text-muted mb-2">
-							Multi-Answer (Required: {item.num_required || normalizeAnswers(item.answer).length}):
-						</small>
-
-						{#each normalizeAnswers(item.answer) as a, index (index)}
-							<span class="answer-option">{index + 1}. {a}</span>
-						{/each}
+						<span class="answer-text">{item.answer}</span>
 					{/if}
 				</div>
 				{#if item.extra}
