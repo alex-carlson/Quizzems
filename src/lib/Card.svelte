@@ -26,8 +26,11 @@
 	$: {
 		const wasJustAnswered = !prevRevealed && item.revealed;
 
+		
 		if (wasJustAnswered) {
-			if ($quiz.currentMode === 'FILL_IN_THE_BLANK') {
+			var card = $quiz.cards[i];
+			console.log(card)
+			if ($quiz.currentMode === 'FILL_IN_THE_BLANK' && card.revealed && card.isCorrect) {
 				const nextIndex = $quiz.cards.findIndex((c, idx) => idx > i && !c.revealed);
 				if (nextIndex !== -1) {
 					setTimeout(() => {
@@ -50,6 +53,8 @@
 	function scrollToIndex(index) {
 		const el = document.querySelector(`[data-card-index="${index}"]`);
 		const y = el.getBoundingClientRect().top + window.pageYOffset - 80;
+
+		console.log("Scrolling to index!");
 
 		window.scrollTo({
 			top: y,

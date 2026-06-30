@@ -254,7 +254,7 @@
 		</div>
 	{:else if !item.revealed}
 		<div class="input-row">
-			<button class="flag-btn" on:click={() => updateCard({ revealed: true })}>
+			<button class="flag-btn" on:click={() => updateCard({ revealed: true, isCorrect: false })}>
 				<Fa icon={faFlag} />
 			</button>
 			<div class="w-100">
