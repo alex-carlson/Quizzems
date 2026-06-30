@@ -507,7 +507,6 @@
 				{/if}
 			</div>
 			<div class="answer-section flex-half d-flex flex-column">
-				<pre>{JSON.stringify(item, null, 2)}</pre>
 
 				<div class="answer-display">
 					{#if item.answer_type === AnswerType.MULTI_ANSWER || item.answer_type === 'multi-answer'}
