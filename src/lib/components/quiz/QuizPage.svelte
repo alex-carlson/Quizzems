@@ -1,0 +1,526 @@
+
+<script>
+    import FlashCards from '$lib/FlashCards.svelte';
+    import Modal from '$lib/Modal.svelte';
+    import { slugify } from '$lib/api/utils.js';
+    import { onDestroy, onMount } from 'svelte';
+    import { incrementPlayCounter } from '$lib/api/collections.js';
+    import { fetchCollaborators } from '$lib/api/user';
+    import QuizHeader from '$lib/components/quiz/QuizHeader.svelte';
+    import { goto } from '$app/navigation';
+    import { page } from '$app/stores';
+    import { getScoreMessage } from '$lib/api/quizScore.js';
+    export let data;
+    export let collectionIds = [];
+    import { quiz } from '$store/quiz.js';
+    import { user } from '$store/user.js';
+    import { addToast } from '$store/toast';
+    import { saveQuiz, saveQuizImages, getSavedQuiz, getSavedQuizByRoute, hydrateQuizImages, deleteQuiz } from '$lib/api/db';
+
+    // Destructure page data with fallbacks
+    const { category, collectionId, author, thumbnail, quizScore, timesPlayed, meta } = data || {};
+
+    let timer = 0;
+    let interval = null;
+    let loading = true;
+    let score = 0;
+    let cards = [];
+    let isOnline = true;
+    let offlineError = '';
+    let savedQuizExists = false;
+    let isSavingOffline = false;
+    let saveProgress = 0;
+    let saveProgressTotal = 0;
+    let saveProgressMessage = '';
+
+    $: state = $quiz;
+    $: cards = $quiz.cards;
+
+    const ids = Array.isArray(collectionIds) ? collectionIds : [];
+
+    function handleEditCollection() {
+        if (!collectionId) return;
+        goto(`/upload?collectionId=${encodeURIComponent(collectionId)}`);
+    }
+
+    function updateCards(e) {
+        // Check if all cards are revealed
+        const allRevealed = cards.every((card) => card.revealed);
+        if (allRevealed) {
+            handleQuizFinish();
+        }
+    }
+
+    async function saveQuizToCache(){
+        if (!collectionId) {
+            offlineError = 'No quiz id to save.';
+            addToast({ type: 'error', message: 'Cannot save quiz offline without a collection ID.' });
+            return;
+        }
+
+        if (!cards?.length) {
+            addToast({ type: 'warning', message: 'No quiz cards loaded yet.' });
+            return;
+        }
+
+        isSavingOffline = true;
+        saveProgress = 0;
+        saveProgressTotal = 0;
+        saveProgressMessage = 'Saving quiz for offline use...';
+        addToast({ type: 'info', message: 'Saving quiz for offline use...' });
+
+        try {
+            await saveQuiz(collectionId, cards, {
+                author,
+                category,
+                thumbnail,
+                quizScore,
+                timesPlayed,
+                meta,
+                author_slug: $page.params.author_slug,
+                slug: $page.params.slug
+            });
+
+            const count = await saveQuizImages(cards, ({ current, total }) => {
+                saveProgress = current;
+                saveProgressTotal = total;
+            });
+
+            if (saveProgressTotal > 0) {
+                saveProgressMessage = `Saved ${saveProgress}/${saveProgressTotal} images...`;
+            }
+
+            addToast({ type: 'success', message: `Saved ${count} image(s) and quiz data for offline use.` });
+            savedQuizExists = true;
+        } catch (err) {
+            console.error('Offline save failed:', err);
+            addToast({ type: 'error', message: 'Failed to save quiz for offline use.' });
+            offlineError = 'Failed to save quiz for offline use.';
+        } finally {
+            isSavingOffline = false;
+            saveProgressMessage = saveProgressTotal > 0 ? 'Offline cache complete.' : 'Offline save complete.';
+            saveProgress = saveProgressTotal;
+        }
+    }
+
+    async function deleteSavedQuiz() {
+        const { author_slug, slug } = $page.params;
+        try {
+            let removed = false;
+            if (collectionId) {
+                await deleteQuiz(collectionId);
+                removed = true;
+            } else {
+                const savedQuiz = await getSavedQuizByRoute(author_slug, slug);
+                if (savedQuiz) {
+                    await deleteQuiz(savedQuiz.id);
+                    removed = true;
+                }
+            }
+
+            if (removed) {
+                savedQuizExists = false;
+                await refreshSavedQuizExists(author_slug, slug);
+                addToast({ type: 'success', message: 'Offline quiz cache deleted.' });
+            } else {
+                addToast({ type: 'warning', message: 'No offline quiz cache was found to delete.' });
+            }
+        } catch (error) {
+            console.error('Failed to delete offline quiz cache:', error);
+            addToast({ type: 'error', message: 'Failed to delete offline quiz cache.' });
+        }
+    }
+
+    async function refreshSavedQuizExists(author_slug, slug) {
+        let savedQuiz = null;
+        if (collectionId) {
+            savedQuiz = await getSavedQuiz(collectionId);
+        }
+        if (!savedQuiz && author_slug && slug) {
+            savedQuiz = await getSavedQuizByRoute(author_slug, slug);
+        }
+        savedQuizExists = !!savedQuiz;
+    }
+
+    async function refreshEditPermission() {
+        if (!collectionId || !$user?.id) {
+            return false;
+        }
+
+        const currentUserName = ($user.username || '').toLowerCase();
+        const authorFromCollection = ($quiz.collection?.author || '').toLowerCase();
+
+        const authorSlugParam = $page.params?.author_slug || '';
+
+        const isAuthor =
+            (currentUserName && authorFromCollection && currentUserName === authorFromCollection) ||
+            (currentUserName && slugify(currentUserName) === authorSlugParam);
+
+        if (isAuthor) {
+            return true;
+        }
+
+        try {
+            const collaborators = await fetchCollaborators(collectionId);
+
+            const list = Array.isArray(collaborators?.data)
+                ? collaborators.data
+                : Array.isArray(collaborators)
+                    ? collaborators
+                    : [];
+
+            return list.some((collab) => {
+                const collabUsername = (collab?.username || '').toLowerCase();
+
+                return (
+                    collab?.id === $user.id ||
+                    collab?.public_id === $user.public_id ||
+                    (collabUsername && collabUsername === currentUserName)
+                );
+            });
+        } catch (error) {
+            console.error('Failed to check collaborator permissions:', error);
+            return false;
+        }
+    }
+
+    function startQuiz(isPractice = false) {
+        quiz.setQuizStarted(true);
+        quiz.setIsPractice(isPractice);
+        quiz.setShowCategory(false);
+
+        if (state.isShuffle) {
+            // Fisher-Yates shuffle algorithm
+            for (let i = cards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [cards[i], cards[j]] = [cards[j], cards[i]];
+            }
+        }
+
+        // Reset timer if not practice
+        if (!isPractice) {
+            timer = 0;
+            interval = setInterval(() => (timer += 1), 1000);
+        } else {
+            clearInterval(interval);
+        }
+
+        // Increment play count for analytics
+        if (collectionId && !isPractice) {
+            incrementPlayCounter(collectionId);
+        }
+        loading = false;
+    }
+
+    function setScore() {
+        let correctAnswerCount = cards.filter((card) => card.isCorrect).length || 0;
+        let totalCount = cards.length;
+
+        return Math.round((correctAnswerCount / totalCount) * 100);
+    }
+
+    // Handle quiz finish
+    function handleQuizFinish() {
+        score = setScore();
+        quiz.setQuizCompleted(true);
+        quiz.openModal();
+        clearInterval(interval);
+    }
+
+    // Add beforeunload warning when quiz is active
+    function handleBeforeUnload(event) {
+        if (state.quizStarted && !state.quizCompleted && !state.practiceMode) {
+            const message =
+                'You are in the middle of a quiz. Are you sure you want to leave? Your progress will be lost.';
+            event.preventDefault();
+            event.returnValue = message;
+            return message;
+        }
+    }
+
+    // Handle back button navigation
+    function handlePopState(event) {
+        if (state.quizStarted && !state.quizCompleted && !state.practiceMode) {
+            const confirmed = confirm(
+                'You are in the middle of a quiz. Are you sure you want to leave? Your progress will be lost.'
+            );
+            if (!confirmed) {
+                // Push the current state back to prevent navigation
+                history.pushState(null, '', window.location.href);
+                return;
+            } else {
+                // User confirmed, allow navigation
+                state.quizCompleted = true;
+            }
+        }
+    }
+
+    async function loadSavedQuiz(author_slug, slug) {
+        let savedQuiz = null;
+
+        if (collectionId) {
+            savedQuiz = await getSavedQuiz(collectionId);
+        }
+
+        if (!savedQuiz && author_slug && slug) {
+            savedQuiz = await getSavedQuizByRoute(author_slug, slug);
+        }
+
+        if (!savedQuiz?.cards?.length) return false;
+
+        savedQuiz.cards = await hydrateQuizImages(savedQuiz.cards);
+        offlineError = '';
+        quiz.setCards(savedQuiz.cards);
+        loading = false;
+        return true;
+    }
+
+    onMount(async () => {
+        const { author_slug, slug } = $page.params;
+
+        if (!author_slug || !slug) {
+            console.error('Missing route parameters');
+        }
+
+        await refreshSavedQuizExists(author_slug, slug);
+
+        isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+        if (typeof window !== 'undefined') {
+            window.addEventListener('online', () => {
+                isOnline = true;
+                offlineError = '';
+            });
+            window.addEventListener('offline', () => {
+                isOnline = false;
+                offlineError = 'You are offline. Showing saved quiz data if available.';
+            });
+        }
+
+        if (!isOnline) {
+            const loaded = await loadSavedQuiz(author_slug, slug);
+            if (loaded) {
+                return;
+            }
+            loading = false;
+            offlineError = 'This quiz has not been saved for offline use yet. Open it while online and save it first.';
+            return;
+        }
+
+        quiz.setCollectionId(ids[0] ?? collectionId);
+
+        try {
+            loading = true;
+
+            const idList = Array.isArray(collectionIds) ? collectionIds : [];
+
+            let loadedCards = [];
+
+            if (idList.length > 0) {
+                const results = await Promise.all(
+                    idList.map((id) => quiz.fetchCards(id))
+                );
+                loadedCards = results.flat();
+            } else if (collectionId) {
+                loadedCards = await quiz.loadCards(collectionId);
+            }
+
+            if (!Array.isArray(loadedCards) || loadedCards.length === 0) {
+                throw new Error('No cards returned from API');
+            }
+
+            quiz.setCards(loadedCards);
+        }
+        catch (error) {
+            console.warn('Online quiz load failed:', error);
+
+            const loaded = await loadSavedQuiz(author_slug, slug);
+
+            if (!loaded) {
+                offlineError = 'Unable to load quiz online and no offline copy exists.';
+            }
+        }
+        finally {
+            loading = false;
+        }
+
+        if (navigator.onLine) {
+            console.log('Checking edit permissions for quiz collection...');
+            quiz.setCanEditCollection(await refreshEditPermission());
+        }
+
+        if (typeof window !== 'undefined') {
+            history.pushState(null, '', window.location.href);
+            window.addEventListener('beforeunload', handleBeforeUnload);
+            window.addEventListener('popstate', handlePopState);
+        }
+    });
+
+    onDestroy(() => {
+        clearInterval(interval);
+        if (typeof window !== 'undefined') {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+            window.removeEventListener('popstate', handlePopState);
+        }
+
+        quiz.reset();
+    });
+</script>
+
+<svelte:head>
+    {#if meta}
+        <!-- Title & Description -->
+        <title>{meta.title}</title>
+        <meta name="description" content={meta.description} />
+
+        <!-- Open Graph -->
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={meta.title} />
+        <meta property="og:description" content={meta.description} />
+        <meta property="og:site_name" content={meta.siteName || 'Quizzems'} />
+        {#if meta.url}<meta property="og:url" content={meta.url} />{/if}
+
+        <!-- Twitter -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={meta.title} />
+        <meta name="twitter:description" content={meta.description} />
+
+        <!-- Image -->
+        {#if meta.image}
+            <meta name="image" content={meta.image} />
+            <meta property="og:image" content={meta.image} />
+            <meta property="og:image:secure_url" content={meta.image} />
+            <meta property="og:image:type" content="image/jpeg" />
+            <meta property="og:image:width" content="1200" />
+            <meta property="og:image:height" content="630" />
+            <meta name="twitter:image" content={meta.image} />
+            <meta name="twitter:image:src" content={meta.image} />
+            <link rel="image_src" href={meta.image} />
+            <link rel="apple-touch-icon" href={meta.image} />
+        {/if}
+
+        <!-- Additional metadata -->
+        <meta name="robots" content="index, follow" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="application-name" content={meta.siteName || 'Quizzems'} />
+        <meta name="theme-color" content={meta.themeColor || '#6F1D1B'} />
+    {/if}
+</svelte:head>
+
+<div>
+    <Modal
+        show={state.showModal}
+        title="Quiz Completed!"
+        message={getScoreMessage(score)}
+        effect={score > 79 ? 'confetti' : 'none'}
+        onClose={() => {
+            state.showModal = false;
+        }}
+    />
+    {#if !state.quizStarted}
+        <div class="white padding rounded m-3">
+            <QuizHeader collectionName={category} {author} authorSlug={slugify(author)} {thumbnail} />
+            <span>Id: {collectionId}</span>
+            {#if offlineError}
+                <div class="alert alert-warning">{offlineError}</div>
+            {/if}
+            {#if timesPlayed > 0}<h3 class="mb-3">Times Played: {timesPlayed}</h3>{/if}
+            {#if !state.quizStarted && cards.length === 0}
+                {#if data?.status === 400}
+                    <h2 class="mb-3">Invalid URL</h2>
+                    <div class="alert alert-warning">
+                        The quiz URL is missing required parameters. Please check the link.
+                        <br /><small>URL: {$page?.url?.href || 'Unknown'}</small>
+                    </div>
+                {:else if data?.status === 404}
+                    <h2 class="mb-3">Quiz Not Found</h2>
+                    <div class="alert alert-warning">
+                        This quiz could not be found. The author or collection may not exist.
+                    </div>
+                {:else if data?.status === 500}
+                    <h2 class="mb-3">Server Error</h2>
+                    <div class="alert alert-danger">
+                        There was an error loading this quiz. Please try again later.
+                    </div>
+                {:else}
+                    {#if loading}
+                        <h2>Loading quiz data...</h2>
+                        <p class="text-muted">Fetching collection data...</p>
+                    {:else if !cards.length}
+                        <h2>No quiz cards found</h2>
+                        <p class="text-warning">This quiz has no questions.</p>
+                    {/if}
+                {/if}
+            {:else}
+                <h2 class="mb-3">Ready to start?</h2>
+                <button
+                    class="btn btn-primary me-2"
+                    style="width: auto; padding: 0 2rem;"
+                    on:click={() => startQuiz(false)}>Go</button
+                >
+                <button
+                    class="btn btn-outline-secondary me-2"
+                    style="width: auto; padding: 0 2rem;"
+                    on:click={() => startQuiz(true)}>Practice</button
+                >
+                {#if savedQuizExists}
+                <button
+                class="btn btn-outline-danger ms-2"
+                style="width: auto; padding: 0 1.5rem;"
+                on:click={() => deleteSavedQuiz()}>Delete offline copy</button>
+                {:else}
+                <button class="btn btn-outline-secondary ms-2"
+                style="width: auto; padding: 0 rem;" on:click={() => saveQuizToCache()}>Save for offline</button>
+                {/if}
+
+                {#if isSavingOffline}
+                    <div class="mt-3">
+                        <div class="progress" style="height: 0.75rem;">
+                            <div
+                                class="progress-bar progress-bar-striped progress-bar-animated"
+                                role="progressbar"
+                                style="width: {saveProgressTotal ? Math.round((saveProgress / saveProgressTotal) * 100) : 100}%"
+                                aria-valuenow={saveProgress}
+                                aria-valuemin="0"
+                                aria-valuemax={saveProgressTotal || 100}>
+                            </div>
+                        </div>
+                        <div class="text-muted small mt-2">{saveProgressMessage}</div>
+                    </div>
+                {/if}
+            {/if}
+        </div>
+    {:else}
+        <div class="mb-3 sticky-top white py-3">
+            <div
+                style="display:flex; justify-content:space-between; align-items:center; padding:0 1rem; gap: 1rem;"
+            >
+                <div style="flex:1;"></div>
+                <h2 style="margin:0; text-align:center; flex:1;">
+                    {Array.isArray(cards) ? cards.filter((c) => c.isCorrect).length : 0}/{Array.isArray(cards)
+                        ? cards.length
+                        : 0}
+                </h2>
+                {#if !state.practiceMode}
+                    <div class="timer" style="flex:1; text-align:right; white-space:nowrap;">
+                        Time: {Math.floor(timer / 60)}:{String(timer % 60).padStart(2, '0')}
+                    </div>
+                {:else}
+                    <div class="timer" style="flex:1; text-align:right; white-space:nowrap;"></div>
+                {/if}
+            </div>
+        </div>
+    {/if}
+
+    <div id="quiz" style="display: {state.quizStarted ? 'block' : 'none'}">
+        {#if loading}
+            <div class="alert alert-info">Loading...</div>
+        {:else}
+            <FlashCards
+                on:finish={handleQuizFinish}
+                on:giveup={handleQuizFinish}
+                on:editCollection={handleEditCollection}
+            />
+        {/if}
+    </div>
+</div>

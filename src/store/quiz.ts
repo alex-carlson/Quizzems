@@ -105,6 +105,13 @@ function createQuizStore() {
                 };
             }),
 
+        fetchCards: async (collectionId) => {
+            if (!collectionId) return [];
+
+            const res = await fetchCollectionItems(collectionId, false);
+            return Array.isArray(res) ? res : res?.data || [];
+        },
+
         loadCards: async (collectionId) => {
             if (!collectionId) return [];
 
@@ -113,7 +120,11 @@ function createQuizStore() {
             const res = await fetchCollectionItems(collectionId, false);
             const cards = Array.isArray(res) ? res : res?.data || [];
 
-            patch({ cards, isLoading: false });
+            patch({
+                cards,
+                isLoading: false
+            });
+
             return cards;
         },
 
