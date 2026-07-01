@@ -4,6 +4,8 @@
 	import { onMount } from 'svelte';
 	import CollectionCard from '$lib/components/CollectionCard.svelte';
 	import Loading from '$lib/components/Loading.svelte';
+	import { Fa } from 'svelte-fa';
+	import { faMinus } from '@fortawesome/free-solid-svg-icons';
 	let collections = [];
 	let filteredCollections = [];
 	let page = 1;
@@ -14,6 +16,7 @@
 	let totalPages = 0;
 	let totalCount = 0;
 	let isLoading = true;
+	let selection = [];
 
 	function getLastModifiedValue(collection) {
 		return collection?.last_modified || 0;
@@ -161,6 +164,34 @@
 		page = 1; // Reset to first page when filters change
 		await fetchPaginatedCollections(page, itemsPerPage, sortOption, sortOrder, filterText);
 	}
+
+	function handleToggleSelect(event) {
+		const { id, selected } = event.detail;
+		if (selected) {
+			if (!selection.includes(id)) {
+				selection = [...selection, id];
+			}
+		} else {
+			selection = selection.filter((item) => item !== id);
+		}
+	}
+
+	function removeSelected(id) {
+		selection = selection.filter((item) => item !== id);
+	}
+
+	function getCollectionLabel(collection) {
+		return collection?.category || collection?.title || `#${collection?.id}`;
+	}
+
+	$: selectedCollections = filteredCollections.filter((collection) => selection.includes(collection.id));
+
+	function handlePlaySelected() {
+		if (!selection.length) return;
+		const query = encodeURIComponent(selection.join(','));
+		window.location.href = `/mix?ids=${query}`;
+	}
+
 	onMount(async () => {
 		document.title = 'Explore';
 		isLoading = true;
@@ -183,6 +214,31 @@
 />
 
 <div class="container">
+	{#if selection.length > 0}
+		<div class="full-width white rounded p-1">
+			<h3>Selected collections:</h3>
+			<ul class="selected-collections-list">
+				{#each selectedCollections as collection}
+					<li>
+						{getCollectionLabel(collection)}
+						<button
+							type="button"
+							class="remove-selected"
+							on:click={() => removeSelected(collection.id)}
+							aria-label="Remove selected collection"
+						>
+							<Fa icon={faMinus} size="sm" />
+						</button>
+					</li>
+				{/each}
+			</ul>
+			<button
+				on:click|preventDefault={handlePlaySelected}
+			>
+				Play Selected
+			</button>
+		</div>
+	{/if}
 	<div class="list grid">
 		{#if isLoading}
 			<Loading invert={true} />
@@ -193,7 +249,13 @@
 			</p>
 			<ul>
 				{#each filteredCollections as collection}
-					<CollectionCard {collection} onNavigate={handleNavigation} />
+					<CollectionCard
+						{collection}
+						showAdd={true}
+						selected={selection.includes(collection.id)}
+						on:toggleSelect={handleToggleSelect}
+						onNavigate={handleNavigation}
+					/>
 				{/each}
 			</ul>
 		{/if}
@@ -218,3 +280,40 @@
 		{/each}
 	</div>
 {/if}
+
+<style>
+	.selected-collections-list {
+		list-style: none;
+		padding: 0;
+		margin: 0 0 1rem 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.selected-collections-list li {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.4rem 0.75rem;
+		background: #f8f9fa;
+		border-radius: 9999px;
+		margin: 0;
+	}
+
+	.selected-collections-list li button.remove-selected {
+		border: none;
+		background: transparent;
+		color: #dc3545;
+		cursor: pointer;
+		padding: 0;
+		width: auto;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.selected-collections-list li button.remove-selected:hover {
+		color: #c82333;
+	}
+</style>
