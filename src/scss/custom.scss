@@ -109,7 +109,7 @@ body {
 
     img {
         width: 288px !important;
-        height: 180px !important;
+        // height: 180px !important;
         object-fit: cover;
         border-radius: 8px;
     }
@@ -119,9 +119,17 @@ body {
         box-shadow: none !important;
     }
 
+    .collections-list.grid {
+        justify-content: center;
+    }
+
     li {
         background-color: transparent !important;
         width: auto !important;
+        max-width: 360px !important;
+        margin-left: auto;
+        margin-right: auto;
+        align-self: start;
 
         a {
             background-color: transparent !important;
@@ -131,7 +139,7 @@ body {
             }
 
             h2 {
-                color: white !important;
+                // color: white !important;
                 font-size: 2rem !important;
             }
 
