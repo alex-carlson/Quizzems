@@ -127,6 +127,7 @@
 		display: flex;
 		flex-direction: column;
 		min-height: 100%;
+		overflow: visible;
 	}
 	.collection-card:hover {
 		transform: translateY(-2px);
@@ -166,17 +167,17 @@
 		width: 34px;
 		height: 34px;
 		border-radius: 9999px;
-		background: #8a8a8a1a;
-		color: #ffffff;
-		border: 1px solid #8a8a8a1a;
+		background: #32c345;
+		color: #14551c;
+		border: 1px solid #14551c;
 		cursor: pointer;
 		position: absolute;
-		top: 0.75rem;
-		right: 0.75rem;
+		top: -2px;
+		right:-4px;
 		padding: 0.25rem;
 	}
 	.card-select:hover {
-		background: #d6d6d629;
+		background: #8ed497;
 	}
 	.card-select input {
 		position: absolute;
