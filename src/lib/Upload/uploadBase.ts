@@ -116,6 +116,16 @@ export async function baseUpload<T = unknown>(
 
         const result = await apiFetch(fullConfig.endpoint, fullConfig.method, payload as never, fullConfig.isFormData);
 
+        // Validate response indicates success
+        if (!result) {
+            throw new Error('Empty response from server');
+        }
+
+        // Check if response has an error flag
+        if (result.error || result.success === false) {
+            throw new Error(result.error || result.message || 'Upload failed');
+        }
+
         if (fullConfig.successMessage) {
             addToast({
                 message: fullConfig.successMessage,

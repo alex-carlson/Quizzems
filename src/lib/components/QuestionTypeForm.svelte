@@ -56,6 +56,30 @@
 		}
 	}
 
+	// Helper function to check if answer already exists in collection
+	function checkDuplicateAnswer(newAnswer) {
+		if (!newAnswer || !$quiz.cards || $quiz.cards.length === 0) {
+			return false;
+		}
+
+		// Normalize the new answer for comparison
+		const normalizeAnswer = (answer) => {
+			if (Array.isArray(answer)) {
+				return answer.map(a => (a || '').trim().toLowerCase()).join(' ');
+			}
+			return (answer || '').trim().toLowerCase();
+		};
+
+		const normalizedNew = normalizeAnswer(newAnswer);
+
+		// Check against existing cards
+		return $quiz.cards.some((card) => {
+			const cardAnswer = card.answer || card.answers;
+			const normalizedCard = normalizeAnswer(cardAnswer);
+			return normalizedCard === normalizedNew && normalizedCard !== '';
+		});
+	}
+
 	// Upload handlers
 	async function handleImageUpload() {
 		if (
@@ -105,9 +129,27 @@
 		}
 
 		const newItems = await quiz.uploadData(uploadItem, undefined, false);
+		
+		if (!newItems) {
+			addToast({ type: 'error', message: 'Image upload failed. Please try again.' });
+			return;
+		}
+		
 		if (newItems && Array.isArray(newItems) && newItems.length > 0 && newItems[0]?.items) {
 			quiz.setCards(newItems[0].items);
 			addToast({ type: 'success', message: 'Image added successfully!' });
+			
+			// Check for duplicate answer
+			const answerToCheck = Array.isArray(item.answers)
+				? item.answers.filter(a => a).join(' ')
+				: item.answer;
+			if (checkDuplicateAnswer(answerToCheck)) {
+				addToast({ 
+					type: 'warning', 
+					message: 'Warning: This answer already exists in this collection.' 
+				});
+			}
+			
 			item.question = '';
 			item.answer = '';
 			item.answers = '';
@@ -121,6 +163,8 @@
 				await quiz.loadCards($quiz.collection.id);
 			}
 			setTimeout(() => focusQuestionInput('image-answer-input'), 100);
+		} else {
+			addToast({ type: 'error', message: 'Failed to add image. Please try again.' });
 		}
 	}
 
@@ -135,9 +179,24 @@
 			author_id: item.author_id || $user?.public_id
 		};
 		const newItems = await quiz.uploadAudio(audioItem);
+		
+		if (!newItems) {
+			addToast({ type: 'error', message: 'Audio upload failed. Please try again.' });
+			return;
+		}
+		
 		if (newItems && Array.isArray(newItems) && newItems.length > 0 && newItems[0]?.items) {
 			quiz.setCards(newItems[0].items);
 			addToast({ type: 'success', message: 'Audio added successfully!' });
+			
+			// Check for duplicate answer (audio title)
+			if (checkDuplicateAnswer(item.answer)) {
+				addToast({ 
+					type: 'warning', 
+					message: 'Warning: This answer already exists in this collection.' 
+				});
+			}
+			
 			item.question = '';
 			item.answer = '';
 			item.answers = '';
@@ -147,6 +206,8 @@
 				await quiz.loadCards($quiz.collection.id);
 			}
 			setTimeout(() => focusQuestionInput('youtube-search-input'), 100);
+		} else {
+			addToast({ type: 'error', message: 'Failed to add audio. Please try again.' });
 		}
 	}
 
@@ -166,9 +227,25 @@
 
 		});
 
+		if (!newItems) {
+			addToast({ type: 'error', message: 'Question upload failed. Please try again.' });
+			return;
+		}
+
 		if (newItems && Array.isArray(newItems) && newItems.length > 0 && newItems[0]?.items) {
 			quiz.setCards(newItems[0].items);
 			addToast({ type: 'success', message: 'Question added successfully!' });
+
+			// Check for duplicate answer
+			const answerToCheck = Array.isArray(item.answers)
+				? item.answers.filter(a => a).join(' ')
+				: item.answer;
+			if (checkDuplicateAnswer(answerToCheck)) {
+				addToast({ 
+					type: 'warning', 
+					message: 'Warning: This answer already exists in this collection.' 
+				});
+			}
 
 			item = {
 				...item,
@@ -183,6 +260,8 @@
 				await quiz.loadCards($quiz.collection.id);
 			}
 			setTimeout(() => focusQuestionInput('question-input-question'), 100);
+		} else {
+			addToast({ type: 'error', message: 'Failed to add question. Please try again.' });
 		}
 	}
 </script>

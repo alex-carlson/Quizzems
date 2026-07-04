@@ -49,8 +49,7 @@ export async function uploadData(item: ImageUploadData, uuid = uuidv4(), forceJp
             author_id: undefined, // Will be set by baseUpload
         }, {
             endpoint: '/items/upload-url',
-            successMessage: 'Image uploaded successfully!',
-            errorMessage: 'Error uploading image data',
+            errorMessage: 'Failed to upload image. Please try again.',
             generateUuid: true
         });
     }
@@ -68,8 +67,7 @@ export async function uploadData(item: ImageUploadData, uuid = uuidv4(), forceJp
     return baseUpload(formDataItem, {
         endpoint: '/items/upload',
         isFormData: true,
-        successMessage: 'Image uploaded successfully!',
-        errorMessage: 'Error uploading image',
+        errorMessage: 'Failed to upload image. Please try again.',
         generateUuid: true
     });
 }
@@ -88,8 +86,7 @@ export async function uploadAudio(item: AudioUploadData) {
     return baseUpload(audioData, {
         endpoint: '/items/add-audio',
         isFormData: true,
-        successMessage: 'Audio uploaded successfully!',
-        errorMessage: 'Error uploading audio data',
+        errorMessage: 'Failed to add audio. Please try again.',
     });
 }
 
@@ -112,8 +109,7 @@ export async function uploadQuestion(data: QuestionUploadData) {
 
     return baseUpload(questionData, {
         endpoint: '/items/add-question',
-        successMessage: 'Question uploaded successfully!',
-        errorMessage: 'Error uploading question data',
+        errorMessage: 'Failed to add question. Please try again.',
     });
 }
 
@@ -132,8 +128,7 @@ export async function uploadThumbnail(data: File, category: string) {
     return baseUpload(thumbnailData, {
         endpoint: '/items/add-thumbnail',
         isFormData: true,
-        successMessage: 'Thumbnail uploaded successfully!',
-        errorMessage: 'Error uploading thumbnail',
+        errorMessage: 'Failed to upload thumbnail. Please try again.',
     });
 }
 
