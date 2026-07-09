@@ -57,23 +57,26 @@
 	}
 
 	// Helper function to check if answer already exists in collection
-	function checkDuplicateAnswer(newAnswer) {
-		if (!newAnswer || !$quiz.cards || $quiz.cards.length === 0) {
+	function checkDuplicateAnswer(newAnswer, cards = $quiz.cards) {
+		if (!newAnswer || !cards || cards.length === 0) {
 			return false;
 		}
 
 		// Normalize the new answer for comparison
 		const normalizeAnswer = (answer) => {
 			if (Array.isArray(answer)) {
-				return answer.map(a => (a || '').trim().toLowerCase()).join(' ');
+				return answer.map((a) => (a || '').trim().toLowerCase()).join(' ');
 			}
 			return (answer || '').trim().toLowerCase();
 		};
 
 		const normalizedNew = normalizeAnswer(newAnswer);
+		if (normalizedNew === '') {
+			return false;
+		}
 
 		// Check against existing cards
-		return $quiz.cards.some((card) => {
+		return cards.some((card) => {
 			const cardAnswer = card.answer || card.answers;
 			const normalizedCard = normalizeAnswer(cardAnswer);
 			return normalizedCard === normalizedNew && normalizedCard !== '';
@@ -136,17 +139,18 @@
 		}
 		
 		if (newItems && Array.isArray(newItems) && newItems.length > 0 && newItems[0]?.items) {
+			const existingCards = $quiz.cards;
 			quiz.setCards(newItems[0].items);
 			addToast({ type: 'success', message: 'Image added successfully!' });
 			
-			// Check for duplicate answer
+			// Check for duplicate answer before the newly added card is included
 			const answerToCheck = Array.isArray(item.answers)
-				? item.answers.filter(a => a).join(' ')
+				? item.answers.filter((a) => a).join(' ')
 				: item.answer;
-			if (checkDuplicateAnswer(answerToCheck)) {
-				addToast({ 
-					type: 'warning', 
-					message: 'Warning: This answer already exists in this collection.' 
+			if (checkDuplicateAnswer(answerToCheck, existingCards)) {
+				addToast({
+					type: 'warning',
+					message: 'Warning: This answer already exists in this collection.'
 				});
 			}
 			
@@ -186,14 +190,15 @@
 		}
 		
 		if (newItems && Array.isArray(newItems) && newItems.length > 0 && newItems[0]?.items) {
+			const existingCards = $quiz.cards;
 			quiz.setCards(newItems[0].items);
 			addToast({ type: 'success', message: 'Audio added successfully!' });
 			
 			// Check for duplicate answer (audio title)
-			if (checkDuplicateAnswer(item.answer)) {
-				addToast({ 
-					type: 'warning', 
-					message: 'Warning: This answer already exists in this collection.' 
+			if (checkDuplicateAnswer(item.title, existingCards)) {
+				addToast({
+					type: 'warning',
+					message: 'Warning: This answer already exists in this collection.'
 				});
 			}
 			
@@ -233,17 +238,18 @@
 		}
 
 		if (newItems && Array.isArray(newItems) && newItems.length > 0 && newItems[0]?.items) {
+			const existingCards = $quiz.cards;
 			quiz.setCards(newItems[0].items);
 			addToast({ type: 'success', message: 'Question added successfully!' });
 
 			// Check for duplicate answer
 			const answerToCheck = Array.isArray(item.answers)
-				? item.answers.filter(a => a).join(' ')
+				? item.answers.filter((a) => a).join(' ')
 				: item.answer;
-			if (checkDuplicateAnswer(answerToCheck)) {
-				addToast({ 
-					type: 'warning', 
-					message: 'Warning: This answer already exists in this collection.' 
+			if (checkDuplicateAnswer(answerToCheck, existingCards)) {
+				addToast({
+					type: 'warning',
+					message: 'Warning: This answer already exists in this collection.'
 				});
 			}
 
