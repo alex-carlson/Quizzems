@@ -67,7 +67,8 @@
 			if (Array.isArray(answer)) {
 				return answer.map((a) => (a || '').trim().toLowerCase()).join(' ');
 			}
-			return (answer || '').trim().toLowerCase();
+			// Ensure non-string inputs (e.g. numbers or objects) are safely coerced to string
+			return String(answer ?? '').trim().toLowerCase();
 		};
 
 		const normalizedNew = normalizeAnswer(newAnswer);
