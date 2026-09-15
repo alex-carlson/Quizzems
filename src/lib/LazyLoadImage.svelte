@@ -18,61 +18,15 @@
 
 	// original image URL
 	$: originalSrc = src || imageUrl;
-
-	// Only try webp if original is not webp
-	$: isWebp = originalSrc && originalSrc.match(/\.webp($|\?)/i);
-	$: webpSrc = !isWebp && originalSrc ? generateWebpUrl(originalSrc) : '';
-
-	// Track loading attempts: 'webp' -> 'original'
-	let currentFormat = !isWebp && webpSrc ? 'webp' : 'original';
-	$: currentSrc = getCurrentSrc(originalSrc, webpSrc, currentFormat);
-
-	function getCurrentSrc(original, webp, format) {
-		if (!original) return '';
-
-		switch (format) {
-			case 'webp':
-				return webp || original;
-			case 'original':
-			default:
-				return original;
-		}
-	}
-
-	function generateWebpUrl(url) {
-		if (!url) return '';
-		// Don't convert if already webp
-		if (url.match(/\.webp($|\?)/i)) return url;
-
-		// If URL has query params, add webp format
-		if (url.includes('?')) {
-			return url.includes('format=')
-				? url.replace(/format=[^&]+/, 'format=webp')
-				: `${url}&format=webp`;
-		}
-
-		// For direct file URLs, try changing extension to .webp
-		if (url.match(/\.(jpe?g|png|gif|bmp|tiff?)$/i)) {
-			return url.replace(/\.(jpe?g|png|gif|bmp|tiff?)$/i, '.webp');
-		}
-
-		// For other URLs, try adding webp query param
-		return `${url}?format=webp`;
-	}
+	$: currentSrc = originalSrc;
 
 	function handleLoad(event) {
 		dispatch('load', event);
 	}
 
 	function handleError(event) {
-		// Progress through formats: webp -> original
-		if (currentFormat === 'webp') {
-			currentFormat = 'original';
-		} else {
-			// All formats failed
-			console.error('Failed to load image in all formats:', originalSrc);
-			dispatch('error', event);
-		}
+		console.error('Failed to load image:', originalSrc);
+		dispatch('error', event);
 	}
 </script>
 
@@ -83,7 +37,7 @@
 			{alt}
 			{width}
 			{height}
-			loading="eager"
+			loading={priority ? 'eager' : loading}
 			on:load={handleLoad}
 			on:error={handleError}
 			style="width:100%;height:100%;object-fit:{objectFit};"
