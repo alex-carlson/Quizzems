@@ -58,6 +58,7 @@
 		// isProcessingAnswer = true;
 
 		const { index, answer, userAnswer, isCorrect } = event.detail;
+		if (isCorrect !== true) return;
 
 		const updated = [...$quiz.cards];
 		// updated[index] = {
@@ -72,6 +73,7 @@
 		// console.log('On correct answer event triggered');
 
 		const nextIndex = updated.findIndex((c, i) => i > index && !c.revealed);
+		if (nextIndex !== -1) setActiveCard(nextIndex);
 
 		// if (answerProcessingTimeout) clearTimeout(answerProcessingTimeout);
 		// answerProcessingTimeout = setTimeout(() => (isProcessingAnswer = false), 150);

@@ -54,13 +54,23 @@
 		const el = document.querySelector(`[data-card-index="${index}"]`);
 		if (!el) return;
 
-		const y = el.getBoundingClientRect().top + window.pageYOffset - 80;
+		const topInset = 80;
+		const bottomInset = 16;
+		const viewportHeight = window.innerHeight;
+		const availableHeight = viewportHeight - topInset - bottomInset;
+		const cardHeight = el.getBoundingClientRect().height;
+		const centeredTop = topInset + Math.max(0, (availableHeight - cardHeight) / 2);
+		const maxTop = viewportHeight - bottomInset - cardHeight;
+		const visibleTop = Math.max(topInset, Math.min(centeredTop, maxTop));
+		const y = el.getBoundingClientRect().top + window.pageYOffset - visibleTop;
 		window.scrollTo({ top: y, behavior: 'instant' });
 
 		setTimeout(() => {
 			const input = el.querySelector('input, textarea');
-			input?.focus();
-			input?.select?.();
+			if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
+				input.focus();
+				input.select();
+			}
 		}, 250);
 	}
 

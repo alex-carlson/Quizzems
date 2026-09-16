@@ -333,7 +333,8 @@
 
 	@media (min-width: 768px) {
 		.input-row {
-			left: 1rem;
+			left: 50%;
+			transform: translateX(-50%);
 			width: min(760px, calc(100% - 2rem));
 			border-radius: 0.75rem 0.75rem 0 0;
 			border: 1px solid #e5e7eb;
