@@ -53,6 +53,19 @@
 		quiz.updateCardById(cardId, patch);
 	}
 
+	async function handleChoiceAnswered() {
+		await tick();
+		const nextIndex = cards.findIndex((card) => !card?.revealed && !card?.hidden);
+		if (nextIndex === -1) return;
+
+		setActiveCard(nextIndex);
+		await tick();
+		document.querySelector(`[data-card-index="${nextIndex}"]`)?.scrollIntoView({
+			behavior: 'smooth',
+			block: 'center'
+		});
+	}
+
 	function onCorrectAnswer(event) {
 		// if (isProcessingAnswer) return;
 		// isProcessingAnswer = true;
@@ -155,6 +168,7 @@
 				card={activeCard}
 				showTextInput={Boolean(activeCard && !activeCard.revealed)}
 				on:answer={handleCardAnswer}
+				on:choiceAnswered={handleChoiceAnswered}
 			/>
 		{/if}
 

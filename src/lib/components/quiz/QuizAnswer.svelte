@@ -124,6 +124,16 @@
 		selectedChoice = choice;
 		isCorrectChoice = isCorrect;
 		updateCard({ revealed: true, userAnswer: choice, isCorrect });
+		dispatch('choiceAnswered');
+	}
+
+	function handleSavedChoiceClick(choice) {
+		if (isLockedIn) return;
+		isLockedIn = true;
+		const correct = getCorrectAnswer();
+		const isCorrect = correct.some((c) => normalize(choice) === normalize(c));
+		updateCard({ revealed: true, userAnswer: choice, isCorrect });
+		dispatch('choiceAnswered');
 	}
 
 	function handleHint() {
@@ -191,13 +201,7 @@
 				<button
 					type="button"
 					class="choice-option"
-					on:click={() => {
-						if (isLockedIn) return;
-						isLockedIn = true;
-						const correct = getCorrectAnswer();
-						const isCorrect = correct.some((c) => normalize(choice) === normalize(c));
-						updateCard({ revealed: true, userAnswer: choice, isCorrect });
-					}}
+					on:click={() => handleSavedChoiceClick(choice)}
 					disabled={isLockedIn}
 				>
 					{choice}
@@ -263,16 +267,25 @@
 	}
 
 	.choice-grid {
+		position: fixed;
+		left: 0;
+		bottom: 0;
+		width: 100%;
+		z-index: 50;
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
+		padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+		background: rgba(255, 255, 255, 0.96);
+		backdrop-filter: blur(6px);
+		border-top: 1px solid #e5e7eb;
+		box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
 	}
 
 	.choice-grid button {
 		white-space: normal;
 		word-break: break-word;
-		min-height: 3rem;
-		padding: 0.75rem 1rem;
+		padding: 0.5rem;
 		font-size: 1rem;
 		align-items: stretch;
 		justify-content: center;
@@ -332,6 +345,15 @@
 	}
 
 	@media (min-width: 768px) {
+		.choice-grid {
+			left: 50%;
+			transform: translateX(-50%);
+			width: min(760px, calc(100% - 2rem));
+			border-radius: 0.75rem 0.75rem 0 0;
+			border: 1px solid #e5e7eb;
+			border-bottom: none;
+		}
+
 		.input-row {
 			left: 50%;
 			transform: translateX(-50%);
