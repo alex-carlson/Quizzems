@@ -223,7 +223,9 @@
     function handleQuizFinish() {
         score = setScore();
         quiz.setQuizCompleted(true);
-        quiz.openModal();
+        if (!state.isPractice) {
+            quiz.openModal();
+        }
         clearInterval(interval);
     }
 
