@@ -175,7 +175,7 @@
 		border-radius: 0.5rem;
 		font-weight: 600;
 		color: white;
-		background: transparent;
+		/* background: transparent; */
 		margin-top: 0;
 	}
 
