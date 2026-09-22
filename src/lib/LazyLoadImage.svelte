@@ -13,7 +13,7 @@
 	export let loading = 'lazy';
 	export let className = '';
 	export let placeholder = 'blur';
-	export let priority = false;
+	export let priority = true;
 	export let objectFit = 'contain';
 
 	// original image URL
