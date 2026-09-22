@@ -66,6 +66,18 @@
 		});
 	}
 
+	async function handleTabToNextCard() {
+		const nextIndex = cards.findIndex(
+			(card, index) => index > activeCardIndex && !card?.revealed && !card?.hidden
+		);
+		if (nextIndex === -1) return;
+
+		setActiveCard(nextIndex);
+		await tick();
+		const nextCard = document.querySelector(`[data-card-index="${nextIndex}"]`);
+		if (nextCard instanceof HTMLElement) nextCard.focus();
+	}
+
 	function onCorrectAnswer(event) {
 		// if (isProcessingAnswer) return;
 		// isProcessingAnswer = true;
@@ -170,6 +182,7 @@
 				showTextInput={Boolean(activeCard && !activeCard.revealed)}
 				on:answer={handleCardAnswer}
 				on:choiceAnswered={handleChoiceAnswered}
+				on:tabToNextCard={handleTabToNextCard}
 			/>
 		{/if}
 

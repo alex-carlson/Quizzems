@@ -166,9 +166,16 @@
 		if (!answer) return [];
 		return Array.isArray(answer) ? answer : [answer];
 	}
+
+	function handleKeydown(event) {
+		if (event.key !== 'Tab' || event.shiftKey) return;
+
+		event.preventDefault();
+		dispatch('tabToNextCard');
+	}
 </script>
 
-<div class="answerbox mt-2">
+<div class="answerbox mt-2" role="group" on:keydown={handleKeydown}>
 	{#if currentMode === 'TRUE_FALSE'}
 		<div class="choice-grid">
 			{#each getMultipleChoiceOptions(2) as choice}
