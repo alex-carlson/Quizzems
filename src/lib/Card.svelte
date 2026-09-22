@@ -84,8 +84,9 @@
 		class="card {item.revealed ? 'revealed' : ''} {item.answerType} {cardStateClass}"
 		data-card-index={i}
 		role="button"
-		tabindex="-1"
+		tabindex="0"
 		on:click
+		on:focus
 		on:keydown={(e) => currentMode === 'FLASH_CARDS' && e.key === 'Enter'}
 	>
 		{#if $quiz.showCategory}

@@ -157,6 +157,7 @@
 					{i}
 					isActive={i === activeCardIndex}
 					on:click={() => setActiveCard(i)}
+					on:focus={() => setActiveCard(i)}
 					on:correctAnswer={onCorrectAnswer}
 					on:giveUp={(e) => setRevealed(e.detail.index, true)}
 				/>
