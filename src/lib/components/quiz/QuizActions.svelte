@@ -16,9 +16,8 @@
 		<button
 			class="give-up"
 			on:click={() => {
-				console.log('Give up clicked');
-				onCompleteQuiz();
 				dispatch('giveup');
+				onCompleteQuiz();
 			}}
 		>
 			<span>Give Up <Fa icon={faFlag} style="margin-left: 0.5rem" /></span>

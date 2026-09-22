@@ -189,7 +189,10 @@
 		<QuizActions
 			{currentMode}
 			isComplete={stats.isComplete}
-			on:giveup={() => dispatch('giveup')}
+			on:giveup={() => {
+				quiz.setCards(cards.map((card) => ({ ...card, revealed: true })));
+				dispatch('giveup');
+			}}
 			onCompleteQuiz={() => dispatch('finish')}
 		/>
 	{/if}
