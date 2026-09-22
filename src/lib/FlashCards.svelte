@@ -75,7 +75,17 @@
 		setActiveCard(nextIndex);
 		await tick();
 		const nextCard = document.querySelector(`[data-card-index="${nextIndex}"]`);
-		if (nextCard instanceof HTMLElement) nextCard.focus();
+		if (!(nextCard instanceof HTMLElement)) return;
+
+		nextCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		nextCard.focus();
+
+		await tick();
+		const answerInput = document.querySelector('.answerbox input, .answerbox textarea');
+		if (answerInput instanceof HTMLInputElement || answerInput instanceof HTMLTextAreaElement) {
+			answerInput.focus();
+			answerInput.select();
+		}
 	}
 
 	function onCorrectAnswer(event) {
