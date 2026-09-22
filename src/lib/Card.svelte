@@ -74,6 +74,10 @@
 		}, 250);
 	}
 
+	function handleFocus() {
+		scrollToIndex(i);
+	}
+
 	onDestroy(() => {
 		clearTimeout(validationTimeout);
 	});
@@ -86,7 +90,7 @@
 		role="button"
 		tabindex="0"
 		on:click
-		on:focus
+		on:focus={handleFocus}
 		on:keydown={(e) => currentMode === 'FLASH_CARDS' && e.key === 'Enter'}
 	>
 		{#if $quiz.showCategory}
