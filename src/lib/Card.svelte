@@ -156,12 +156,14 @@
 		background: linear-gradient(180deg, rgba(254, 249, 195, 0.95), rgba(255, 255, 255, 1));
 	}
 
-	.card.correct {
+	.card.correct,
+	.card.revealed.correct {
 		border-color: #22c55e;
 		background: linear-gradient(90deg, #09db53f2, #08a33ef2);
 	}
 
-	.card.incorrect {
+	.card.incorrect,
+	.card.revealed {
 		border-color: #ef4444;
 		background: linear-gradient(90deg, #d60e0ef2, #970808);
 	}
