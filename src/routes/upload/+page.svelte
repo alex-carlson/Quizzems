@@ -163,7 +163,17 @@
 				on:click={async () => {
 					const res = await createCollection(tempCategory);
 					const col = Array.isArray(res) ? res[0] : res;
-					if (col?.id) await quiz.loadCollection(col.id);
+					if (col?.id) {
+						// Use the created record directly instead of re-fetching, since an
+						// immediate GET can race with backend read-after-write consistency
+						// and silently leave the collection/cards unset until a page refresh.
+						quiz.setCollection(col);
+						quiz.setCollectionId(col.id);
+						quiz.setCards([]);
+						tempCategory = '';
+						quiz.loadUserCollections($user.public_id);
+						quiz.loadCollection(col.id);
+					}
 				}}
 			>
 				Create
