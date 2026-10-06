@@ -28,20 +28,53 @@
 		console.error('Failed to load image:', originalSrc);
 		dispatch('error', event);
 	}
+
+	$: isGif = currentSrc?.toLowerCase().endsWith('.gif');
+
+	$: videoSrc = isGif ? currentSrc.replace(/\.gif$/i, '.mp4') : null;
 </script>
 
 <div class="enhanced-image-wrapper {className}" class:cover-fit={objectFit === 'cover'}>
 	{#if currentSrc}
-		<img
-			src={currentSrc}
-			{alt}
-			{width}
-			{height}
-			loading={priority ? 'eager' : loading}
-			on:load={handleLoad}
-			on:error={handleError}
-			style="width:100%;height:100%;object-fit:{objectFit};"
-		/>
+		{#if isGif}
+			{#if videoSrc}
+				<video
+					src={videoSrc}
+					autoplay
+					loop
+					muted
+					playsinline
+					aria-label={alt}
+					{width}
+					{height}
+					on:loadeddata={handleLoad}
+					on:error={handleVideoError}
+					style="width:100%;height:100%;object-fit:{objectFit};"
+				></video>
+			{:else}
+				<img
+					src={currentSrc}
+					{alt}
+					{width}
+					{height}
+					loading={'eager'}
+					on:load={handleLoad}
+					on:error={handleError}
+					style="width:100%;height:100%;object-fit:{objectFit};"
+				/>
+			{/if}
+		{:else}
+			<img
+				src={currentSrc}
+				{alt}
+				{width}
+				{height}
+				loading={'eager'}
+				on:load={handleLoad}
+				on:error={handleError}
+				style="width:100%;height:100%;object-fit:{objectFit};"
+			/>
+		{/if}
 	{/if}
 </div>
 
