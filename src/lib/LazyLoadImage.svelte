@@ -57,7 +57,7 @@
 					{alt}
 					{width}
 					{height}
-					loading={'eager'}
+					loading="eager"
 					on:load={handleLoad}
 					on:error={handleError}
 					style="width:100%;height:100%;object-fit:{objectFit};"
@@ -69,7 +69,7 @@
 				{alt}
 				{width}
 				{height}
-				loading={'eager'}
+				loading="eager"
 				on:load={handleLoad}
 				on:error={handleError}
 				style="width:100%;height:100%;object-fit:{objectFit};"
