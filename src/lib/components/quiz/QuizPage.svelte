@@ -24,8 +24,16 @@
 	} from '$lib/api/db';
 
 	// Destructure page data with fallbacks
-	const { category, collectionId, author, thumbnail, quizScore, timesPlayed, meta } = data || {};
-
+	$: ({
+		category,
+		collectionId,
+		author,
+		thumbnail,
+		quizScore,
+		timesPlayed,
+		meta
+	} = data || {});
+	
 	let timer = 0;
 	let interval = null;
 	let loading = true;

@@ -108,6 +108,20 @@ export async function fetchCollectionById(
     }
 }
 
+export async function fetchCollelctionNamesById(ids: string[]): Promise<string[] | undefined> {
+    const url = `${import.meta.env.VITE_API_URL}/collections/names?ids=${ids.join(',')}`;
+    try {
+        const response = await fetch(url, { method: "GET" });
+        if (!response.ok) throw new Error("Failed to fetch collection names");
+        const data = await response.json();
+        console.log("Fetched collection names:", data);
+        return data;
+    } catch (error) {
+        console.error("Error fetching collection names:", error);
+        return undefined;
+    }
+}
+
 export async function incrementPlayCounter(collectionId: string) {
     const url = `/collections/incrementPlays/${collectionId}`;
     console.log("Incrementing play counter for collection:", collectionId);
