@@ -284,14 +284,18 @@
 				const updatedItem = result[0].items.find((i) => i.id === item.id);
 				if (updatedItem) {
 					// Add cache-busting parameter to image URL to force browser reload
-					if (updatedItem.image && typeof updatedItem.image === 'string') {
-						const cacheBreaker = `_=${Date.now()}`;
-						const separator = updatedItem.image.includes('?') ? '&' : '?';
-						updatedItem.image = updatedItem.image.split('?')[0] + separator + cacheBreaker;
+					// The image is displayed from `url || image`, so bust both
+					const cacheBreaker = `_=${Date.now()}`;
+					for (const key of ['image', 'url']) {
+						if (updatedItem[key] && typeof updatedItem[key] === 'string') {
+							const base = updatedItem[key].split('?')[0];
+							updatedItem[key] = `${base}?${cacheBreaker}`;
+						}
 					}
 
 					// Update all item properties with the server's data
 					Object.assign(item, updatedItem);
+					item = item;
 
 					addToast({
 						type: 'success',

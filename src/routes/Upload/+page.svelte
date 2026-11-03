@@ -187,6 +187,14 @@
 				bind:tempTags
 				bind:showCropper
 				{suggestedTags}
+				on:thumbnailUpdated={(e) => {
+					const base = (e.detail?.thumbnail_url || $quiz.collection.thumbnail_url || '').split('?')[0];
+					if (!base) return;
+					quiz.setCollection({
+						...$quiz.collection,
+						thumbnail_url: `${base}?_=${Date.now()}`
+					});
+				}}
 			/>
 
 			<div class="card mb-4">
