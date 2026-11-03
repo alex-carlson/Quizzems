@@ -61,16 +61,16 @@
 				</label>
 			{/if}
 			<div class="card-image">
-				{#if collection.items_length > 0 && collection.thumbnail_url}
-					<LazyLoadImage
-						src={collection.thumbnail_url}
-						alt="Thumbnail"
-						width={288}
-						height={288}
-						placeholder="blur"
-						objectFit="cover"
-					/>
-				{/if}
+				<LazyLoadImage
+					src={collection.items_length > 0 && collection.thumbnail_url
+						? collection.thumbnail_url
+						: '/placeholder.jpg'}
+					alt="Thumbnail"
+					width={288}
+					height={288}
+					placeholder="blur"
+					objectFit="cover"
+				/>
 			</div>
 			<div class="card-main">
 				<div class="card-header">
