@@ -184,7 +184,18 @@
 		return collection?.category || collection?.title || `#${collection?.id}`;
 	}
 
-	$: selectedCollections = filteredCollections.filter((collection) => selection.includes(collection.id));
+	// Remember selected collections so they survive filter/page changes
+	let selectedCache = {};
+	$: {
+		const next = {};
+		for (const id of selection) {
+			const found = filteredCollections.find((c) => c.id === id);
+			if (found) next[id] = found;
+			else if (selectedCache[id]) next[id] = selectedCache[id];
+		}
+		selectedCache = next;
+	}
+	$: selectedCollections = selection.map((id) => selectedCache[id]).filter(Boolean);
 
 	function handlePlaySelected() {
 		if (!selection.length) return;

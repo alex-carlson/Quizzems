@@ -29,7 +29,8 @@
 		collectionId,
 		author,
 		thumbnail,
-		quizScore,
+		thumbnails,
+		authors,
 		timesPlayed,
 		meta
 	} = data || {});
@@ -436,7 +437,7 @@
 	/>
 	{#if !state.quizStarted}
 		<div class="white padding rounded m-3">
-			<QuizHeader collectionName={category} {author} authorSlug={slugify(author)} {thumbnail} />
+			<QuizHeader collectionName={category} {author} authorSlug={slugify(author)} {thumbnail} {thumbnails} {authors} />
 			{#if offlineError}
 				<div class="alert alert-warning">{offlineError}</div>
 			{/if}

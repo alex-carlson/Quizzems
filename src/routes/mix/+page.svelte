@@ -1,6 +1,6 @@
 <script>
     import QuizPage from '$lib/components/quiz/QuizPage.svelte';
-    import { fetchCollelctionNamesById } from '$lib/api/collections';
+    import { fetchCollelctionNamesById, fetchCollectionById } from '$lib/api/collections';
     import { page } from '$app/stores';
 
     let collectionNames = [];
@@ -38,12 +38,38 @@
         }
     }
 
+    let thumbnails = [];
+    let authors = [];
+
+    $: if (ids.length) {
+        loadThumbnails(ids);
+    } else {
+        thumbnails = [];
+        authors = [];
+    }
+
+    async function loadThumbnails(ids) {
+        const results = await Promise.all(ids.map((id) => fetchCollectionById(String(id))));
+        thumbnails = results.map((c) => c?.thumbnail_url).filter(Boolean);
+        const seen = new Map();
+        for (const c of results) {
+            const p = c?.profiles;
+            const name = p?.username || p?.public_id;
+            if (name && !seen.has(name)) {
+                seen.set(name, p.username_slug || name);
+            }
+        }
+        authors = [...seen].map(([name, slug]) => ({ name, slug }));
+    }
+
     $: data = {
         ids,
         category: collectionNames.join(', '),
         author: '',
+        authors,
         collectionId: null,
         thumbnail: null,
+        thumbnails,
         meta: {
             title: 'Mixed Quiz',
             description: 'Quiz made from multiple collections.'
