@@ -8,6 +8,8 @@ Quizzems is a web application designed to help users study and prepare for bar t
 - Practice with flashcards or quiz modes
 - Track your progress and performance
 - Share question sets with friends or teammates
+- Discover related quizzes on a quiz page. Recommendations search the first 50 public results for
+  up to four title-word prefixes, then rank them by fuzzy title similarity.
 
 ## Getting Started
 

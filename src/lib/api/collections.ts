@@ -75,6 +75,18 @@ export async function fetchTaggedCollections(
 	}
 }
 
+export async function fetchCollectionsByTag(tag: string): Promise<Collection[]> {
+	const response = await fetch(
+		`${import.meta.env.VITE_API_URL}/collections/byTag/${encodeURIComponent(tag)}`,
+		{ method: 'GET' }
+	);
+	if (response.status === 404) return [];
+	if (!response.ok) throw new Error(`Failed to fetch collections by tag (HTTP ${response.status})`);
+	const collections: unknown = await response.json();
+	if (!Array.isArray(collections)) throw new Error('Invalid collections by tag response');
+	return collections;
+}
+
 // Fetch random collections
 export async function fetchRandomCollections(
 	limit = 10,

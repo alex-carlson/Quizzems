@@ -1,37 +1,39 @@
 <script>
-	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
+	import { onDestroy } from 'svelte';
 	import Collections from '$lib/Collections.svelte';
-	import { apiFetch } from '$lib/api/fetchdata';
+	import { fetchCollectionsByTag } from '$lib/api/collections';
 	import { page } from '$app/stores';
-	import { get } from 'svelte/store';
 
 	let collections = [];
-	let tag = '';
 	let isLoading = true;
 	let error = null;
+	let requestId = 0;
 
-	onMount(async () => {
-		tag = get(page).params.tag;
-		await fetchCollectionsByTag();
-	});
+	$: tag = $page.params.tag;
+	$: if (browser && tag) loadCollections(tag);
 
-	async function fetchCollectionsByTag() {
+	async function loadCollections(currentTag) {
+		const currentRequest = ++requestId;
 		isLoading = true;
 		error = null;
+		collections = [];
 		try {
-			const result = await apiFetch(`/collections/byTag/${encodeURIComponent(tag)}`);
-			if (Array.isArray(result)) {
-				collections = result;
-			} else {
-				collections = [];
-			}
+			const result = await fetchCollectionsByTag(currentTag);
+			if (currentRequest === requestId) collections = result;
 		} catch (e) {
-			error = 'Failed to load collections for this tag.';
-			collections = [];
+			if (currentRequest === requestId) {
+				console.error('Failed to load collections for tag:', e);
+				error = 'Failed to load collections for this tag.';
+			}
 		} finally {
-			isLoading = false;
+			if (currentRequest === requestId) isLoading = false;
 		}
 	}
+
+	onDestroy(() => {
+		requestId++;
+	});
 </script>
 
 <svelte:head>
