@@ -23,6 +23,7 @@
 	export let showIsVisible = false;
 	export let showDate = true;
 	export let showAdd = false;
+	export let compact = false;
 
 	const dispatch = createEventDispatcher();
 
@@ -51,7 +52,7 @@
 	}
 </script>
 
-<li class="col-12 col-sm-6 col-md-6 col-lg-4 col-xl-3 mb-md-4 w-100">
+<li class="col-12 col-sm-6 col-md-6 col-lg-4 col-xl-3 mb-md-4 w-100" class:compact>
 	{#if collection}
 		<article class="collection-card card border-0 shadow-sm w-100">
 			{#if showAdd}
@@ -132,6 +133,30 @@
 	.collection-card:hover {
 		transform: translateY(-2px);
 		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+	}
+	li.compact {
+		margin-bottom: 0 !important;
+	}
+	.compact .collection-card {
+		flex-direction: row;
+		align-items: stretch;
+		text-align: left;
+	}
+	.compact .card-image {
+		width: 90px;
+		min-width: 90px;
+		min-height: 90px;
+		aspect-ratio: unset;
+	}
+	.compact .card-main {
+		padding: 0.75rem;
+		justify-content: center;
+	}
+	.compact .card-meta {
+		justify-content: flex-start;
+	}
+	.compact .collection-title {
+		font-size: 1rem;
 	}
 	.card-image {
 		width: 100%;

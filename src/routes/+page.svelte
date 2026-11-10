@@ -1,7 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
-	import { goto } from '$app/navigation';
 	import Collections from '$lib/Collections.svelte';
 	import Tags from '$lib/components/Tags.svelte';
 	import { fetchCardCount, fetchCollectionsCount } from '$lib/api/items';
@@ -29,15 +28,6 @@
 		}
 	});
 
-	function loadSearchedPage(event) {
-		const detail = event.detail;
-		const url = `/quiz/${detail.author_public_id}/${detail.slug}`;
-		const state = { collectionId: detail.id };
-		if (browser) {
-			goto(url, { state });
-		}
-	}
-
 	onMount(() => {
 		if (browser) {
 			document.title = 'Quizzems';
@@ -58,26 +48,24 @@
 			{cardCount} questions across {collectionCount} quizzes!
 		</h4>
 	</div>
-</div>
-
-<div class="container mb-5">
-	<h2>The quiz of the day is...</h2>
-	<div class="p2">
-		<Collections
-			grid={true}
-			list={false}
-			sortmode="random-daily"
-			limit={1}
-			showAuthor={true}
-			on:searched={loadSearchedPage}
-		/>
+	<div class="hero-discovery container pb-4">
+		<section aria-labelledby="daily-quizzes-heading">
+			<h2 id="daily-quizzes-heading">Quizzes of the Day</h2>
+			<Collections
+				grid={false}
+				list={true}
+				compact={true}
+				sortmode="quiz-of-the-day"
+				limit={6}
+				showAuthor={true}
+			/>
+		</section>
+		<section aria-labelledby="popular-categories-heading">
+			<h2 id="popular-categories-heading">Popular Categories</h2>
+			<Tags count={5} list={true} />
+		</section>
 	</div>
 </div>
-
-<div class="container">
-	<h2>Popular Categories</h2>
-</div>
-<Tags count={12} centered={true} />
 
 <div class="container mt-5">
 	<h2>Latest Quizzes</h2>
@@ -94,3 +82,22 @@
 <div class="container mt-5">
 	<h2><a href="/potpourri">Try Potpourri!</a></h2>
 </div>
+
+<style>
+	.hero-discovery {
+		position: relative;
+		z-index: 2;
+		display: grid;
+		grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+		gap: 2rem;
+	}
+	.hero-discovery h2 {
+		margin-bottom: 1rem;
+	}
+	@media (max-width: 767px) {
+		.hero-discovery {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 1.5rem;
+		}
+	}
+</style>

@@ -10,6 +10,7 @@
 		fetchLatestCollections,
 		fetchRandomCollections,
 		fetchPopularCollections,
+		fetchQuizOfTheDayCollections
 	} from './api/collections';
 	import { fetchUser } from './api/user';
 	export let list = true;
@@ -17,6 +18,7 @@
 	export let search = false;
 	export let condensed = false;
 	export let showAuthor = false;
+	export let compact = false;
 	export let sortmode = 'default'; // 'default', 'latest', 'popular', 'random'
 	export let limit = 12; // null for no limit, or a number to limit results
 	export let onSelectCollection = null; // Allow parent to override selection behavior
@@ -95,6 +97,18 @@
 					data = daily ? [daily] : [];
 					break;
 				}
+				case 'quiz-of-the-day': {
+					try {
+						data = await fetchQuizOfTheDayCollections();
+					} catch (error) {
+						console.error('Error fetching quizzes of the day:', error);
+					}
+					if (!data?.length) {
+						const daily = await fetchRandomCollections(1, true);
+						data = daily ? [daily] : [];
+					}
+					break;
+				}
 				default:
 					data = await fetchLatestCollections(limit || 12);
 					break;
@@ -148,10 +162,13 @@
 	$: placeholderPageIndexes = Array.from({ length: pageSize }, (_, i) => i);
 	$: totalPages = Math.max(1, Math.ceil(filteredCollections.length / pageSize));
 	$: if (currentPage > totalPages) currentPage = totalPages;
-	$: paginatedCollections = filteredCollections.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+	$: paginatedCollections = filteredCollections.slice(
+		(currentPage - 1) * pageSize,
+		currentPage * pageSize
+	);
 </script>
 
-<div class="collections-container {layoutClass} {sortmode}">
+<div class="collections-container {layoutClass} {sortmode}" class:compact>
 	{#if condensed}
 		<button
 			class="toggle-button"
@@ -171,7 +188,12 @@
 					bind:value={searchTerm}
 					on:input={() => {
 						currentPage = 1;
-						if (searchTerm.trim().length > 0 && collections.length === 0 && !loadedFullCollectionList && !isLoading) {
+						if (
+							searchTerm.trim().length > 0 &&
+							collections.length === 0 &&
+							!loadedFullCollectionList &&
+							!isLoading
+						) {
 							loadCollections();
 						}
 					}}
@@ -181,7 +203,7 @@
 		{#if isLoading || (!hasInitialized && collections.length === 0)}
 			<ul class="collections-list {grid ? 'grid' : list ? 'list' : ''}">
 				{#each placeholderPageIndexes as placeholderIndex (placeholderIndex)}
-					<CollectionCard />
+					<CollectionCard {compact} />
 				{/each}
 			</ul>
 		{:else if filteredCollections.length === 0}
@@ -198,6 +220,7 @@
 						showDate={!condensed}
 						showIsVisible={condensed}
 						showAuthor={!condensed && showAuthor}
+						{compact}
 					/>
 				{/each}
 			</ul>
@@ -263,6 +286,12 @@
 		list-style: none;
 		padding: 0;
 		margin: 0;
+	}
+	.compact .collections-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		padding: 0;
 	}
 
 	/* Grid layout */
@@ -392,7 +421,9 @@
 		font-size: 1rem;
 		background: white;
 		color: #333;
-		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+		transition:
+			border-color 0.2s ease,
+			box-shadow 0.2s ease;
 	}
 
 	.search-bar:focus {

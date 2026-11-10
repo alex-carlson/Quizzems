@@ -16,17 +16,20 @@ async function getAuthHeaders(requireAuth = true): Promise<Record<string, string
     };
 }
 
-export async function apiFetch(endpoint, method = 'GET', body = null, isFormData = false, requireAuth = true) {
+export async function apiFetch(endpoint, method = 'GET', body: unknown = null, isFormData = false, requireAuth = true) {
     const authHeaders = await getAuthHeaders(requireAuth);
     const headers: Record<string, string> = { ...authHeaders };
     if (!isFormData) headers['Content-Type'] = 'application/json';
+    if (isFormData && !(body instanceof FormData)) {
+        throw new Error('Form data body is required');
+    }
 
     const url = import.meta.env.VITE_API_URL + endpoint;
 
     const response = await fetch(url, {
         method,
         headers,
-        body: isFormData ? body : body ? JSON.stringify(body) : null
+        body: isFormData && body instanceof FormData ? body : body ? JSON.stringify(body) : null
     });
 
     if (!response.ok) {

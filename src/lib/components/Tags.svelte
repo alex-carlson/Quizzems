@@ -3,15 +3,19 @@
 	import { fetchTags } from '$lib/api/collections';
 	export let count = 10; // Default number of tags to fetch
 	export let centered = false; // Whether to center the tags
+	export let list = false;
 
 	let tags = [];
+	let loading = true;
 
 	// on mount, fetch tags from the API
 	onMount(async () => {
 		try {
-			tags = await fetchTags(count);
+			tags = (await fetchTags(count)) || [];
 		} catch (error) {
 			console.error('Error fetching tags:', error);
+		} finally {
+			loading = false;
 		}
 	});
 
@@ -20,14 +24,14 @@
 	}
 </script>
 
-<div class="tags-scrollbar">
+<div class="tags-scrollbar" class:vertical={list}>
 	<div class="tags">
 		{#if tags.length > 0}
 			<ul class={centered ? 'centered' : ''}>
 				{#each tags as item}
 					<li>
 						<a
-							href={`/tags/${item.tag}`}
+							href={`/tags/${encodeURIComponent(item.tag)}`}
 							class="tag"
 							draggable="false"
 							on:dragstart={preventAnchorDrag}
@@ -37,6 +41,8 @@
 					</li>
 				{/each}
 			</ul>
+		{:else if loading}
+			<p>Loading categories...</p>
 		{:else}
 			<p>No tags available</p>
 		{/if}
@@ -111,5 +117,30 @@
 
 	.centered {
 		justify-content: flex-start;
+	}
+	.vertical {
+		width: 100%;
+		background: transparent;
+		overflow: visible;
+	}
+	.vertical .tags {
+		width: 100%;
+		min-width: 0;
+	}
+	.vertical .tags ul {
+		display: flex;
+		flex-direction: column;
+		padding: 0;
+		gap: 0.5rem;
+	}
+	.vertical .tag {
+		display: block;
+		border: 0;
+		border-radius: 0.375rem;
+		padding: 0.75rem 1rem;
+		white-space: normal;
+	}
+	.vertical .tags p {
+		color: inherit;
 	}
 </style>

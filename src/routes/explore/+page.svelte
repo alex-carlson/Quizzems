@@ -1,6 +1,6 @@
 <script>
 	import SortAndFilter from '$lib/SortAndFilter.svelte';
-	import { apiFetch } from '$lib/api/fetchdata';
+	import { fetchPaginatedPublicCollections } from '$lib/api/collections';
 	import { onMount } from 'svelte';
 	import CollectionCard from '$lib/components/CollectionCard.svelte';
 	import Loading from '$lib/components/Loading.svelte';
@@ -43,16 +43,9 @@
 	) {
 		isLoading = true;
 		try {
-			const url = `/collections/page/${pageNum}/${limit}`;
-
-			// Pass sort and filter parameters in the request body
-			const requestBody = {
-				sortMode,
-				sortOrder,
-				filter: filterText
-			};
-
-			const response = await apiFetch(url, 'POST', requestBody, false, false);
+			const response = await fetchPaginatedPublicCollections(
+				pageNum, limit, sortMode, sortOrder, filterText
+			);
 
 			if (response && response.collections) {
 				const sortedCollections = applyFallbackSort(response.collections, sortMode, sortOrder);
