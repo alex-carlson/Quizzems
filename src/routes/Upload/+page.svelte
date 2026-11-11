@@ -147,8 +147,9 @@
 					collections={$quiz.userCollections || []}
 					grid
 					search={true}
-					onSelectCollection={(e) => {
-						quiz.loadCollection(e.id);
+					onSelectCollection={async (e) => {
+						const collection = await quiz.loadCollection(e.id);
+						if (!collection) throw new Error('Failed to load collection');
 						showCollections = false;
 					}}
 				/>

@@ -84,8 +84,9 @@
 	}
 	.related-card {
 		height: 100%;
+		max-width: 300px;
 		overflow: hidden;
-		color: inherit;
+		color: var(--red);
 		text-decoration: none;
 	}
 	.related-card:hover {
@@ -97,6 +98,7 @@
 		object-fit: cover;
 	}
 	.related-card h3 {
+		color: var(--red);
 		font-size: 1.15rem;
 	}
 </style>

@@ -2,6 +2,7 @@
 	import { formatTimestamp } from '$lib/api/utils.js';
 	import { goto } from '$app/navigation';
 	import { fetchUser } from '$lib/api/user';
+	import { addToast } from '$store/toast';
 	import { createEventDispatcher } from 'svelte';
 	import LazyLoadImage from '$lib/LazyLoadImage.svelte';
 	import {
@@ -26,35 +27,84 @@
 	export let compact = false;
 
 	const dispatch = createEventDispatcher();
+	let isNavigating = false;
 
 	$: tagCount = collection?.tags ? collection.tags.split(',').length : 0;
 
 	async function defaultGotoPageWithState(author_id, slug) {
+		let author_slug;
 		try {
 			const user = await fetchUser(author_id);
-			const author_slug = user.username_slug || user.username || 'unknown-author';
-			const url = `/quiz/${author_slug}/${slug}`;
-			const state = { collectionId: collection.id };
-			goto(url, { state });
+			author_slug = user.username_slug || user.username || 'unknown-author';
 		} catch (error) {
 			console.error('Error fetching user for navigation:', error);
-			goto(`/quiz/unknown-author/${slug}`, { state: { collectionId: collection.id } });
+			author_slug = 'unknown-author';
 		}
+		await goto(`/quiz/${author_slug}/${slug}`, { state: { collectionId: collection.id } });
 	}
 
-	function handleNavigation() {
-		if (onNavigate) return onNavigate(collection);
-		defaultGotoPageWithState(collection.author_public_id, collection.slug);
+	async function handleNavigation() {
+		if (isNavigating) return;
+		isNavigating = true;
+		try {
+			if (onNavigate) {
+				await onNavigate(collection);
+			} else {
+				await defaultGotoPageWithState(collection.author_public_id, collection.slug);
+			}
+		} catch (error) {
+			console.error('Error opening quiz:', error);
+			addToast({ type: 'error', message: 'Unable to open quiz. Please try again.' });
+		} finally {
+			isNavigating = false;
+		}
 	}
 
 	function handleSelectionToggle() {
 		dispatch('toggleSelect', { id: collection.id, selected: !selected });
 	}
+
+	function fitTitle(node) {
+		const header = node.closest('.card-header');
+		let frame;
+
+		function fit() {
+			cancelAnimationFrame(frame);
+			frame = requestAnimationFrame(() => {
+				if (!header.clientWidth) return;
+
+				let min = 12;
+				let max = 49 / 1.2;
+				node.style.setProperty('--collection-title-size', `${min}px`);
+				while (max - min > 0.25) {
+					const size = (min + max) / 2;
+					node.style.setProperty('--collection-title-size', `${size}px`);
+					if (node.scrollHeight <= header.clientHeight) min = size;
+					else max = size;
+				}
+				node.style.setProperty('--collection-title-size', `${min}px`);
+			});
+		}
+
+		const observer = new ResizeObserver(fit);
+		observer.observe(header);
+		document.fonts?.addEventListener('loadingdone', fit);
+		fit();
+
+		return {
+			update: fit,
+			destroy() {
+				cancelAnimationFrame(frame);
+				observer.disconnect();
+				document.fonts?.removeEventListener('loadingdone', fit);
+			}
+		};
+	}
 </script>
 
 <li class="col-12 col-sm-6 col-md-6 col-lg-4 col-xl-3 mb-md-4 w-100" class:compact>
 	{#if collection}
-		<article class="collection-card card border-0 shadow-sm w-100">
+		<article class="collection-card card border-0 shadow-sm w-100" class:is-navigating={isNavigating}>
 			{#if showAdd}
 				<label class="card-select" aria-label={selected ? 'Deselect collection' : 'Select collection'}>
 					<input type="checkbox" checked={selected} on:change={handleSelectionToggle} />
@@ -75,8 +125,8 @@
 			</div>
 			<div class="card-main">
 				<div class="card-header">
-					<a class="collection-title-link" href="#" on:click|preventDefault={handleNavigation}>
-						<h2 class="collection-title">{collection.category}</h2>
+					<a class="collection-title-link stretched-link" href="#" aria-disabled={isNavigating} on:click|preventDefault={handleNavigation}>
+						<h2 class="collection-title" title={collection.category} use:fitTitle={collection.category}>{collection.category}</h2>
 					</a>
 				</div>
 				<div class="card-meta">
@@ -108,6 +158,12 @@
 						<span class="card-author">by {collection.profiles.username || collection.profiles.public_id}</span>
 					{/if}
 				</div>
+				{#if isNavigating}
+					<div class="navigation-status" role="status">
+						<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+						Loading quiz...
+					</div>
+				{/if}
 			</div>
 		</article>
 	{:else}
@@ -121,18 +177,36 @@
 </li>
 
 <style>
+	li {
+		align-self: start;
+	}
+	:global(.list.grid) li {
+		height: auto;
+	}
 	.collection-card {
 		transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 		will-change: transform;
 		color: inherit;
 		display: flex;
 		flex-direction: column;
-		min-height: 100%;
+		height: auto;
 		overflow: visible;
 	}
 	.collection-card:hover {
 		transform: translateY(-2px);
 		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+	}
+	.collection-card.is-navigating {
+		box-shadow: 0 0 0 2px #0d6efd, 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+		cursor: progress;
+	}
+	.navigation-status {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		color: #0a58ca;
+		font-weight: 600;
 	}
 	li.compact {
 		margin-bottom: 0 !important;
@@ -155,9 +229,6 @@
 	.compact .card-meta {
 		justify-content: flex-start;
 	}
-	.compact .collection-title {
-		font-size: 1rem;
-	}
 	.card-image {
 		width: 100%;
 		aspect-ratio: 5 / 4;
@@ -171,19 +242,23 @@
 	.card-main {
 		display: flex;
 		flex-direction: column;
-		justify-content: space-between;
-		gap: 0.75rem;
-		padding: 1rem;
+		justify-content: flex-start;
+		gap: 0.5rem;
+		padding: 0.5rem 1rem 1rem 1rem;
 		color: #626262;
 		flex: 1;
+		min-width: 0;
 	}
 	.card-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		gap: 0.75rem;
-		position: relative;
+		padding: 0;
 		border-bottom: 0px;
+		height: 49px;
+		flex: 0 0 49px;
+		min-width: 0;
 	}
 	.card-select {
 		display: inline-flex;
@@ -200,6 +275,7 @@
 		top: -2px;
 		right:-4px;
 		padding: 0.25rem;
+		z-index: 2;
 	}
 	.card-select:hover {
 		background: #8ed497;
@@ -217,12 +293,25 @@
 		height: 1rem;
 	}
 	.collection-title-link {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		width: 100%;
+		height: 100%;
+		min-width: 0;
 		text-decoration: none;
 		color: inherit;
 	}
+	:global(.list) :global(ul) :global(li) .card-header .collection-title-link {
+		flex-direction: row;
+	}
 	.collection-title {
 		margin: 0;
-		font-size: 1.25rem;
+		width: 100%;
+		max-height: 49px;
+		overflow: hidden;
+		overflow-wrap: anywhere;
+		font-size: var(--collection-title-size, 1.25rem);
 		line-height: 1.2;
 	}
 	.card-meta {
@@ -275,9 +364,6 @@
 		.card-main {
 			padding: 0.75rem;
 			justify-content: center;
-		}
-		.collection-title {
-			font-size: 1rem;
 		}
 	}
 </style>

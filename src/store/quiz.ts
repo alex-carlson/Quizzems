@@ -120,15 +120,14 @@ function createQuizStore() {
 
             patch({ isLoading: true, collectionId });
 
-            const res = await fetchCollectionItems(collectionId, false);
-            const cards = Array.isArray(res) ? res : res?.data || [];
-
-            patch({
-                cards,
-                isLoading: false
-            });
-
-            return cards;
+            try {
+                const res = await fetchCollectionItems(collectionId, false);
+                const cards = Array.isArray(res) ? res : res?.data || [];
+                patch({ cards });
+                return cards;
+            } finally {
+                patch({ isLoading: false });
+            }
         },
 
         loadCollection: async (collectionId) => {
@@ -151,6 +150,7 @@ function createQuizStore() {
 
             // ONLY ONE SOURCE OF TRUTH
             await quiz.loadCards(collectionId);
+            return collection;
         },
 
         loadUserCollections: async (userId) => {

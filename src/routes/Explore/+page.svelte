@@ -6,6 +6,7 @@
 	import Loading from '$lib/components/Loading.svelte';
 	import { Fa } from 'svelte-fa';
 	import { faMinus } from '@fortawesome/free-solid-svg-icons';
+	import { goto } from '$app/navigation';
 	let collections = [];
 	let filteredCollections = [];
 	let page = 1;
@@ -82,9 +83,7 @@
 		// Navigate to the collection page
 		const url = `/quiz/${collection.profiles.username_slug}/${collection.slug}`;
 		const state = { collectionId: collection.id };
-		window.history.pushState(state, '', url);
-		// go to page
-		window.location.href = url;
+		return goto(url, { state });
 	}
 
 	// Generate array of page numbers to show

@@ -4,6 +4,7 @@
 
 	import LazyLoadImage from './LazyLoadImage.svelte';
 	import YoutubeAudioPlayer from '$lib/YoutubeAudioPlayer.svelte';
+	import { scrollToCard } from '$lib/components/quiz/scrollToCard.js';
 
 	export let i = 0;
 	export let isActive = false;
@@ -54,16 +55,7 @@
 		const el = document.querySelector(`[data-card-index="${index}"]`);
 		if (!el) return;
 
-		const topInset = 80;
-		const bottomInset = 16;
-		const viewportHeight = window.innerHeight;
-		const availableHeight = viewportHeight - topInset - bottomInset;
-		const cardHeight = el.getBoundingClientRect().height;
-		const centeredTop = topInset + Math.max(0, (availableHeight - cardHeight) / 2);
-		const maxTop = viewportHeight - bottomInset - cardHeight;
-		const visibleTop = Math.max(topInset, Math.min(centeredTop, maxTop));
-		const y = el.getBoundingClientRect().top + window.pageYOffset - visibleTop;
-		window.scrollTo({ top: y, behavior: 'instant' });
+		scrollToCard(index, 'instant');
 
 		setTimeout(() => {
 			const input = el.querySelector('input, textarea');

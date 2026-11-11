@@ -5,6 +5,7 @@
 	import { areStringsClose } from '$lib/api/utils';
 	import Fa from 'svelte-fa';
 	import { faFlag, faLightbulb } from '@fortawesome/free-solid-svg-icons';
+	import { swipeDirection } from './swipeNavigation.js';
 
 	const dispatch = createEventDispatcher();
 
@@ -18,19 +19,24 @@
 	let lockedAnswers = [];
 	let usedCorrect = new Set();
 	let optionsCacheMap = new Map();
+	let answerDrafts = new Map();
 
 	$: item = card;
 	$: currentMode = $quiz.currentMode;
 
 	$: if (item?.id && item.id !== lastId) {
+		if (lastId !== null) {
+			answerDrafts.set(lastId, { draftAnswer, draftAnswers, lockedAnswers, usedCorrect });
+		}
 		lastId = item.id;
 		isLockedIn = false;
 		selectedChoice = null;
 		isCorrectChoice = null;
-		draftAnswer = '';
-		draftAnswers = item.num_required ? Array(item.num_required).fill('') : [];
-		lockedAnswers = [];
-		usedCorrect = new Set();
+		const saved = answerDrafts.get(item.id);
+		draftAnswer = saved?.draftAnswer ?? '';
+		draftAnswers = saved?.draftAnswers ?? (item.num_required ? Array(item.num_required).fill('') : []);
+		lockedAnswers = saved?.lockedAnswers ?? [];
+		usedCorrect = saved?.usedCorrect ?? new Set();
 		optionsCacheMap.delete(item.id);
 	}
 
@@ -173,6 +179,53 @@
 		event.preventDefault();
 		dispatch('tabToNextCard');
 	}
+
+	function swipeInput(node) {
+		let start = null;
+
+		function touchStart(event) {
+			if (event.touches.length !== 1) {
+				start = null;
+				return;
+			}
+			const touch = event.touches[0];
+			start = { id: touch.identifier, x: touch.clientX, y: touch.clientY };
+		}
+
+		function touchMove(event) {
+			if (event.touches.length !== 1) start = null;
+		}
+
+		function touchEnd(event) {
+			if (!start || event.touches.length) {
+				start = null;
+				return;
+			}
+			const touch = Array.from(event.changedTouches).find((t) => t.identifier === start.id);
+			if (touch) {
+				const direction = swipeDirection(start, { x: touch.clientX, y: touch.clientY });
+				if (direction) dispatch('swipeCard', direction);
+			}
+			start = null;
+		}
+
+		function touchCancel() {
+			start = null;
+		}
+
+		node.addEventListener('touchstart', touchStart, { passive: true });
+		node.addEventListener('touchmove', touchMove, { passive: true });
+		node.addEventListener('touchend', touchEnd, { passive: true });
+		node.addEventListener('touchcancel', touchCancel, { passive: true });
+		return {
+			destroy() {
+				node.removeEventListener('touchstart', touchStart);
+				node.removeEventListener('touchmove', touchMove);
+				node.removeEventListener('touchend', touchEnd);
+				node.removeEventListener('touchcancel', touchCancel);
+			}
+		};
+	}
 </script>
 
 <div class="answerbox mt-2" role="group" on:keydown={handleKeydown}>
@@ -226,6 +279,7 @@
 						<input
 							type="text"
 							class="form-control answer-box"
+							use:swipeInput
 							bind:value={draftAnswers[index]}
 							disabled={lockedAnswers[index]}
 							on:input={(e) => {
@@ -239,6 +293,7 @@
 					<input
 						type="text"
 						class="form-control answer-box"
+						use:swipeInput
 						bind:value={draftAnswer}
 						on:input={(e) => {
 							if (isLockedIn) return;
@@ -349,6 +404,7 @@
 
 	.input-row .form-control.answer-box {
 		flex: 1 1 auto;
+		touch-action: pan-y;
 	}
 
 	@media (min-width: 768px) {

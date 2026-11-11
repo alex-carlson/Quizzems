@@ -39,28 +39,23 @@
 	const dispatch = createEventDispatcher();
 
 	async function selectCollection(collection) {
-		isCollapsed = true;
-
 		if (onSelectCollection) {
-			onSelectCollection(collection);
+			await onSelectCollection(collection);
+			isCollapsed = true;
 			return;
 		}
 
 		dispatch('selectCollection', collection.id);
 
+		let author_slug;
 		try {
 			const user = await fetchUser(collection.profiles.public_id);
-			const author_slug = user.username_slug || user.username || 'unknown-author';
-			const url = `/quiz/${author_slug}/${collection.slug}`;
-			const state = { collectionId: collection.id };
-
-			goto(url, { state });
+			author_slug = user.username_slug || user.username || 'unknown-author';
 		} catch (error) {
 			console.error('Error fetching user for navigation:', error);
-			const url = `/quiz/unknown-author/${collection.slug}`;
-			const state = { collectionId: collection.id };
-			goto(url, { state });
+			author_slug = 'unknown-author';
 		}
+		await goto(`/quiz/${author_slug}/${collection.slug}`, { state: { collectionId: collection.id } });
 	}
 
 	onMount(async () => {

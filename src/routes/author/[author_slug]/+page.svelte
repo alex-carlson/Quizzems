@@ -19,7 +19,7 @@
 		console.log('Navigating to collection:', collection);
 
 		//use goto navigation
-		goto(
+		return goto(
 			`/quiz/${collection.profiles.username_slug || collection.profiles.username || collection.profiles.public_id}/${collection.slug}`,
 			{ state: { collectionId: collection.id } }
 		);

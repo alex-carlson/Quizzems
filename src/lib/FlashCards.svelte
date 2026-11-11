@@ -9,6 +9,8 @@
 	import QuizActions from './components/quiz/QuizActions.svelte';
 	import QuizAnswer from './components/quiz/QuizAnswer.svelte';
 	import { quiz } from '$store/quiz.js';
+	import { findAvailableCard } from './components/quiz/swipeNavigation.js';
+	import { scrollToCard } from './components/quiz/scrollToCard.js';
 
 	const dispatch = createEventDispatcher();
 
@@ -60,16 +62,11 @@
 
 		setActiveCard(nextIndex);
 		await tick();
-		document.querySelector(`[data-card-index="${nextIndex}"]`)?.scrollIntoView({
-			behavior: 'smooth',
-			block: 'center'
-		});
+		scrollToCard(nextIndex);
 	}
 
 	async function handleTabToNextCard() {
-		const nextIndex = cards.findIndex(
-			(card, index) => index > activeCardIndex && !card?.revealed && !card?.hidden
-		);
+		const nextIndex = findAvailableCard(cards, activeCardIndex, 1);
 		if (nextIndex === -1) return;
 
 		setActiveCard(nextIndex);
@@ -77,7 +74,7 @@
 		const nextCard = document.querySelector(`[data-card-index="${nextIndex}"]`);
 		if (!(nextCard instanceof HTMLElement)) return;
 
-		nextCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		scrollToCard(nextIndex);
 		nextCard.focus();
 
 		await tick();
@@ -86,6 +83,15 @@
 			answerInput.focus();
 			answerInput.select();
 		}
+	}
+
+	async function handleSwipeCard(event) {
+		const nextIndex = findAvailableCard(cards, activeCardIndex, event.detail);
+		if (nextIndex === -1) return;
+
+		setActiveCard(nextIndex);
+		await tick();
+		scrollToCard(nextIndex);
 	}
 
 	function onCorrectAnswer(event) {
@@ -193,6 +199,7 @@
 				on:answer={handleCardAnswer}
 				on:choiceAnswered={handleChoiceAnswered}
 				on:tabToNextCard={handleTabToNextCard}
+				on:swipeCard={handleSwipeCard}
 			/>
 		{/if}
 
@@ -205,6 +212,9 @@
 			}}
 			onCompleteQuiz={() => dispatch('finish')}
 		/>
+		{#if !stats.isComplete}
+			<div class="scroll-space" aria-hidden="true"></div>
+		{/if}
 	{/if}
 
 	<Modal
@@ -219,3 +229,10 @@
 		}}
 	/>
 </div>
+
+<style>
+	.scroll-space {
+		height: 100vh;
+		height: 100dvh;
+	}
+</style>

@@ -512,7 +512,7 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="mb-3 sticky-top white py-3">
+		<div class="quiz-status-bar mb-3 sticky-top white py-3">
 			<div
 				style="display:flex; justify-content:space-between; align-items:center; padding:0 1rem; gap: 1rem;"
 			>

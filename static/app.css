@@ -13900,7 +13900,7 @@ body {
   height: 3rem !important;
 }
 .collections-container.random-daily li a h2 {
-  font-size: 2rem !important;
+  font-size: var(--collection-title-size, 2rem) !important;
 }
 .collections-container.random-daily li a .card-meta {
   color: rgb(212, 212, 212) !important;
