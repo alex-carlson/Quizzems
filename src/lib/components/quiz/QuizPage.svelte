@@ -250,7 +250,7 @@
 
 	// Add beforeunload warning when quiz is active
 	function handleBeforeUnload(event) {
-		if (state.quizStarted && !state.quizCompleted && !state.practiceMode) {
+		if (state.quizStarted && !state.quizCompleted && !state.isPractice) {
 			const message =
 				'You are in the middle of a quiz. Are you sure you want to leave? Your progress will be lost.';
 			event.preventDefault();
@@ -261,7 +261,7 @@
 
 	// Handle back button navigation
 	function handlePopState(event) {
-		if (state.quizStarted && !state.quizCompleted && !state.practiceMode) {
+		if (state.quizStarted && !state.quizCompleted && !state.isPractice) {
 			const confirmed = confirm(
 				'You are in the middle of a quiz. Are you sure you want to leave? Your progress will be lost.'
 			);
@@ -512,22 +512,22 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="quiz-status-bar mb-3 sticky-top white py-3">
+		<div class="quiz-status-bar mb-3 sticky-top py-3">
 			<div
 				style="display:flex; justify-content:space-between; align-items:center; padding:0 1rem; gap: 1rem;"
 			>
 				<div style="flex:1;"></div>
-				<h2 style="margin:0; text-align:center; flex:1;">
+				<div style="margin:0; text-align:center; flex:1; color: black; background-color: white; padding: 0.5rem 1rem; border-radius: 4px; display: inline-block; font-size: 1.5rem; font-weight: bold;">
 					{Array.isArray(cards) ? cards.filter((c) => c.isCorrect).length : 0}/{Array.isArray(cards)
 						? cards.length
 						: 0}
-				</h2>
-				{#if !state.practiceMode}
-					<div class="timer" style="flex:1; text-align:right; white-space:nowrap;">
-						Time: {Math.floor(timer / 60)}:{String(timer % 60).padStart(2, '0')}
+				</div>
+				{#if !state.isPractice}
+					<div class="timer" style="flex:1; text-align:center; white-space:nowrap; color: black; background-color: white; padding: 0.5rem 1rem; border-radius: 4px; display: inline-block; font-size: 1.5rem; font-weight: bold;">
+						{Math.floor(timer / 60)}:{String(timer % 60).padStart(2, '0')}
 					</div>
 				{:else}
-					<div class="timer" style="flex:1; text-align:right; white-space:nowrap;"></div>
+					<div class="timer" style="flex:1;"></div>
 				{/if}
 			</div>
 		</div>
