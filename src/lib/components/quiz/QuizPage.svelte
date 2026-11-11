@@ -517,13 +517,13 @@
 				style="display:flex; justify-content:space-between; align-items:center; padding:0 1rem; gap: 1rem;"
 			>
 				<div style="flex:1;"></div>
-				<div style="margin:0; text-align:center; flex:1; color: black; background-color: white; padding: 0.5rem 1rem; border-radius: 4px; display: inline-block; font-size: 1.5rem; font-weight: bold;">
+				<div style="margin:0; text-align:center; flex:1; color: white; text-shadow: -1px -1px 0 #000,  1px -1px 0 #000, -1px  1px 0 #000, 1px  1px 0 #000; solid 2px black;  padding: 0.5rem 1rem; border-radius: 4px; display: inline-block; font-size: 3rem; font-weight: bold;">
 					{Array.isArray(cards) ? cards.filter((c) => c.isCorrect).length : 0}/{Array.isArray(cards)
 						? cards.length
 						: 0}
 				</div>
 				{#if !state.isPractice}
-					<div class="timer" style="flex:1; text-align:center; white-space:nowrap; color: black; background-color: white; padding: 0.5rem 1rem; border-radius: 4px; display: inline-block; font-size: 1.5rem; font-weight: bold;">
+					<div class="timer" style="margin:0; text-align:center; flex:1; color: white; text-shadow: -1px -1px 0 #000,  1px -1px 0 #000, -1px  1px 0 #000, 1px  1px 0 #000; solid 2px black;  padding: 0.5rem 1rem; border-radius: 4px; display: inline-block; font-size: 3rem; font-weight: bold;">
 						{Math.floor(timer / 60)}:{String(timer % 60).padStart(2, '0')}
 					</div>
 				{:else}
