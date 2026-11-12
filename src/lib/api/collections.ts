@@ -161,6 +161,31 @@ export async function fetchQuizOfTheDayCollections(): Promise<Collection[]> {
 	return collections;
 }
 
+export async function fetchDailyFallbackCollections(): Promise<Collection[]> {
+	const response = await fetch(`${import.meta.env.VITE_API_URL}/collections/daily-quizzes`, {
+		method: 'GET'
+	});
+	if (!response.ok) throw new Error(`Failed to fetch daily fallback quizzes (HTTP ${response.status})`);
+
+	const collections: unknown = await response.json();
+	if (
+		!Array.isArray(collections) ||
+		collections.length !== 4 ||
+		!collections.every(
+			(collection) =>
+				typeof collection === 'object' &&
+				collection !== null &&
+				normalizeQuizId(collection.id) !== undefined &&
+				typeof collection.category === 'string'
+		) ||
+		new Set(collections.map((collection) => normalizeQuizId(collection.id))).size !== 4
+	) {
+		throw new Error('Invalid daily fallback quizzes response');
+	}
+
+	return collections;
+}
+
 export async function updateQuizOfTheDayIds(ids: string[]): Promise<void> {
 	if (ids.length < 1 || ids.length > 6 || new Set(ids).size !== ids.length) {
 		throw new Error('Choose between 1 and 6 unique quizzes of the day');

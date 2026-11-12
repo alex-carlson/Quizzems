@@ -25,6 +25,7 @@
 	export let showDate = true;
 	export let showAdd = false;
 	export let compact = false;
+	export let centerText = false;
 
 	const dispatch = createEventDispatcher();
 	let isNavigating = false;
@@ -102,7 +103,7 @@
 	}
 </script>
 
-<li class="col-12 col-sm-6 col-md-6 col-lg-4 col-xl-3 mb-md-4 w-100" class:compact>
+<li class="col-12 col-sm-6 col-md-6 col-lg-4 col-xl-3 mb-md-4 w-100" class:compact class:centered={centerText}>
 	{#if collection}
 		<article class="collection-card card border-0 shadow-sm w-100" class:is-navigating={isNavigating}>
 			{#if showAdd}
@@ -221,6 +222,8 @@
 		min-width: 90px;
 		min-height: 90px;
 		aspect-ratio: unset;
+		border-top-right-radius: 0;
+		border-bottom-left-radius: inherit;
 	}
 	.compact .card-main {
 		padding: 0.75rem;
@@ -229,12 +232,20 @@
 	.compact .card-meta {
 		justify-content: flex-start;
 	}
+	.centered .card-main {
+		text-align: center;
+	}
+	.centered .card-meta {
+		justify-content: center;
+	}
 	.card-image {
 		width: 100%;
 		aspect-ratio: 5 / 4;
 		min-height: 120px;
 		background: #f8f9fa;
 		overflow: hidden;
+		border-top-left-radius: inherit;
+		border-top-right-radius: inherit;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -360,9 +371,15 @@
 			height: auto;
 			max-height: none;
 			aspect-ratio: unset;
+			border-top-right-radius: 0;
+			border-bottom-left-radius: inherit;
 		}
 		.card-main {
 			padding: 0.75rem;
+			justify-content: center;
+			text-align: center;
+		}
+		.compact .card-meta {
 			justify-content: center;
 		}
 	}

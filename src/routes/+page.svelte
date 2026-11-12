@@ -52,17 +52,15 @@
 		<section aria-labelledby="daily-quizzes-heading">
 			<h2 id="daily-quizzes-heading">Quizzes of the Day</h2>
 			<Collections
-				grid={false}
-				list={true}
-				compact={true}
 				sortmode="quiz-of-the-day"
-				limit={6}
-				showAuthor={true}
+				limit={4}
+				compact={true}
+				grid={true}
 			/>
 		</section>
 		<section aria-labelledby="popular-categories-heading">
 			<h2 id="popular-categories-heading">Popular Categories</h2>
-			<Tags count={5} list={true} />
+			<Tags count={4} list={true} />
 		</section>
 	</div>
 </div>
@@ -89,15 +87,36 @@
 		z-index: 2;
 		display: grid;
 		grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-		gap: 2rem;
+		gap: 0.5rem;
 	}
 	.hero-discovery h2 {
 		margin-bottom: 1rem;
+	}
+	.hero-discovery :global(.collections-container.quiz-of-the-day .collections-list) {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.5rem;
+	}
+	.hero-discovery :global(.quiz-of-the-day .collections-list li) {
+		min-width: 0;
+		max-width: none;
 	}
 	@media (max-width: 767px) {
 		.hero-discovery {
 			grid-template-columns: minmax(0, 1fr);
 			gap: 1.5rem;
+		}
+	}
+	@media (max-width: 575.98px) {
+		.hero-discovery :global(.quiz-of-the-day .collection-card) {
+			flex-direction: column;
+		}
+		.hero-discovery :global(.quiz-of-the-day .card-image) {
+			width: 100%;
+			min-width: 0;
+			aspect-ratio: 5 / 4;
+			border-top-right-radius: inherit;
+			border-bottom-left-radius: 0;
 		}
 	}
 </style>

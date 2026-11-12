@@ -10,7 +10,8 @@
 		fetchLatestCollections,
 		fetchRandomCollections,
 		fetchPopularCollections,
-		fetchQuizOfTheDayCollections
+		fetchQuizOfTheDayCollections,
+		fetchDailyFallbackCollections
 	} from './api/collections';
 	import { fetchUser } from './api/user';
 	export let list = true;
@@ -99,9 +100,9 @@
 						console.error('Error fetching quizzes of the day:', error);
 					}
 					if (!data?.length) {
-						const daily = await fetchRandomCollections(1, true);
-						data = daily ? [daily] : [];
+						data = await fetchDailyFallbackCollections();
 					}
+					if (limit > 0) data = data.slice(0, limit);
 					break;
 				}
 				default:
@@ -216,6 +217,7 @@
 						showIsVisible={condensed}
 						showAuthor={!condensed && showAuthor}
 						{compact}
+						centerText={sortmode === 'quiz-of-the-day'}
 					/>
 				{/each}
 			</ul>
