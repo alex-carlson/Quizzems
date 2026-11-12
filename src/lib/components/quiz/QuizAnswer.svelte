@@ -20,28 +20,27 @@
 	let usedCorrect = new Set();
 	let optionsCacheMap = new Map();
 	let answerDrafts = new Map();
-	let viewportBottom = 0;
+	let viewportBottom = null;
 
 	onMount(() => {
 		const visualViewport = window.visualViewport;
 		if (!visualViewport) return;
 
-		function updateViewportBottom() {
-			viewportBottom = Math.max(
-				0,
-				window.innerHeight - visualViewport.offsetTop - visualViewport.height
-			);
-		}
+		const updateViewportBottom = () => {
+			viewportBottom = visualViewport.offsetTop + visualViewport.height;
+		};
 
 		updateViewportBottom();
 		visualViewport.addEventListener('resize', updateViewportBottom);
 		visualViewport.addEventListener('scroll', updateViewportBottom);
 		window.addEventListener('resize', updateViewportBottom);
+		window.addEventListener('scroll', updateViewportBottom);
 
 		return () => {
 			visualViewport.removeEventListener('resize', updateViewportBottom);
 			visualViewport.removeEventListener('scroll', updateViewportBottom);
 			window.removeEventListener('resize', updateViewportBottom);
+			window.removeEventListener('scroll', updateViewportBottom);
 		};
 	});
 
@@ -58,7 +57,8 @@
 		isCorrectChoice = null;
 		const saved = answerDrafts.get(item.id);
 		draftAnswer = saved?.draftAnswer ?? '';
-		draftAnswers = saved?.draftAnswers ?? (item.num_required ? Array(item.num_required).fill('') : []);
+		draftAnswers =
+			saved?.draftAnswers ?? (item.num_required ? Array(item.num_required).fill('') : []);
 		lockedAnswers = saved?.lockedAnswers ?? [];
 		usedCorrect = saved?.usedCorrect ?? new Set();
 		optionsCacheMap.delete(item.id);
@@ -254,7 +254,11 @@
 
 <div class="answerbox mt-2" role="group" on:keydown={handleKeydown}>
 	{#if currentMode === 'TRUE_FALSE'}
-		<div class="choice-grid" style:bottom={`${viewportBottom}px`}>
+		<div
+			class="choice-grid"
+			class:viewport-anchored={viewportBottom !== null}
+			style:top={viewportBottom === null ? undefined : `${viewportBottom}px`}
+		>
 			{#each getMultipleChoiceOptions(2) as choice}
 				<button
 					type="button"
@@ -267,7 +271,11 @@
 			{/each}
 		</div>
 	{:else if currentMode === 'MULTIPLE_CHOICE'}
-		<div class="choice-grid" style:bottom={`${viewportBottom}px`}>
+		<div
+			class="choice-grid"
+			class:viewport-anchored={viewportBottom !== null}
+			style:top={viewportBottom === null ? undefined : `${viewportBottom}px`}
+		>
 			{#each getMultipleChoiceOptions(4) as choice}
 				<button
 					type="button"
@@ -293,7 +301,11 @@
 			{/each}
 		</div>
 	{:else if !item.revealed && showTextInput}
-		<div class="input-row" style:bottom={`${viewportBottom}px`}>
+		<div
+			class="input-row"
+			class:viewport-anchored={viewportBottom !== null}
+			style:top={viewportBottom === null ? undefined : `${viewportBottom}px`}
+		>
 			<button class="flag-btn" on:click={() => updateCard({ revealed: true, isCorrect: false })}>
 				<Fa icon={faFlag} />
 			</button>
@@ -431,6 +443,11 @@
 		touch-action: pan-y;
 	}
 
+	.viewport-anchored {
+		bottom: auto;
+		transform: translateY(-100%);
+	}
+
 	@media (min-width: 768px) {
 		.choice-grid {
 			left: 50%;
@@ -448,6 +465,10 @@
 			border-radius: 0.75rem 0.75rem 0 0;
 			border: 1px solid #e5e7eb;
 			border-bottom: none;
+		}
+
+		.viewport-anchored {
+			transform: translate(-50%, -100%);
 		}
 	}
 </style>
