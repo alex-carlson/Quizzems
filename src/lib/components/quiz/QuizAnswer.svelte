@@ -1,5 +1,5 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
 	import { quiz } from '$store/quiz';
 	import { AnswerType } from '$lib/types/enums';
 	import { areStringsClose } from '$lib/api/utils';
@@ -20,6 +20,30 @@
 	let usedCorrect = new Set();
 	let optionsCacheMap = new Map();
 	let answerDrafts = new Map();
+	let viewportBottom = 0;
+
+	onMount(() => {
+		const visualViewport = window.visualViewport;
+		if (!visualViewport) return;
+
+		function updateViewportBottom() {
+			viewportBottom = Math.max(
+				0,
+				window.innerHeight - visualViewport.offsetTop - visualViewport.height
+			);
+		}
+
+		updateViewportBottom();
+		visualViewport.addEventListener('resize', updateViewportBottom);
+		visualViewport.addEventListener('scroll', updateViewportBottom);
+		window.addEventListener('resize', updateViewportBottom);
+
+		return () => {
+			visualViewport.removeEventListener('resize', updateViewportBottom);
+			visualViewport.removeEventListener('scroll', updateViewportBottom);
+			window.removeEventListener('resize', updateViewportBottom);
+		};
+	});
 
 	$: item = card;
 	$: currentMode = $quiz.currentMode;
@@ -230,7 +254,7 @@
 
 <div class="answerbox mt-2" role="group" on:keydown={handleKeydown}>
 	{#if currentMode === 'TRUE_FALSE'}
-		<div class="choice-grid">
+		<div class="choice-grid" style:bottom={`${viewportBottom}px`}>
 			{#each getMultipleChoiceOptions(2) as choice}
 				<button
 					type="button"
@@ -243,7 +267,7 @@
 			{/each}
 		</div>
 	{:else if currentMode === 'MULTIPLE_CHOICE'}
-		<div class="choice-grid">
+		<div class="choice-grid" style:bottom={`${viewportBottom}px`}>
 			{#each getMultipleChoiceOptions(4) as choice}
 				<button
 					type="button"
@@ -269,7 +293,7 @@
 			{/each}
 		</div>
 	{:else if !item.revealed && showTextInput}
-		<div class="input-row">
+		<div class="input-row" style:bottom={`${viewportBottom}px`}>
 			<button class="flag-btn" on:click={() => updateCard({ revealed: true, isCorrect: false })}>
 				<Fa icon={faFlag} />
 			</button>
