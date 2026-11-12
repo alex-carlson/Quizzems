@@ -6,7 +6,7 @@
 	import { incrementPlayCounter } from '$lib/api/collections.js';
 	import { fetchCollaborators } from '$lib/api/user';
 	import QuizHeader from '$lib/components/quiz/QuizHeader.svelte';
-	import { goto } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { getScoreMessage } from '$lib/api/quizScore.js';
 	export let data;
@@ -47,9 +47,14 @@
 	let saveProgress = 0;
 	let saveProgressTotal = 0;
 	let saveProgressMessage = '';
+	let themeColorElement;
 
 	$: state = $quiz;
 	$: cards = $quiz.cards;
+
+	afterNavigate(() => {
+		themeColorElement?.setAttribute('content', meta?.themeColor || '#6F1D1B');
+	});
 
 	const ids = Array.isArray(collectionIds) ? collectionIds : [];
 
@@ -385,6 +390,7 @@
 </script>
 
 <svelte:head>
+	<meta name="theme-color" content={meta?.themeColor || '#6F1D1B'} bind:this={themeColorElement} />
 	{#if meta}
 		<!-- Title & Description -->
 		<title>{meta.title}</title>
@@ -421,7 +427,6 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="format-detection" content="telephone=no" />
 		<meta name="application-name" content={meta.siteName || 'Quizzems'} />
-		<meta name="theme-color" content={meta.themeColor || '#6F1D1B'} />
 	{/if}
 </svelte:head>
 
